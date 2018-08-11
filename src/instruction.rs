@@ -12,6 +12,14 @@ pub enum Opcode {
     JMP,
     JMPF,
     JMPB,
+    EQ,
+    NEQ,
+    GTE,
+    LTE,
+    LT,
+    GT,
+    JMPE,
+    NOP,
 }
 
 /// We implement this trait to make it easy to convert from a u8 to an Opcode
@@ -27,6 +35,14 @@ impl From<u8> for Opcode {
             7 => Opcode::JMP,
             8 => Opcode::JMPF,
             9 => Opcode::JMPB,
+            10 => Opcode::EQ,
+            11 => Opcode::NEQ,
+            12 => Opcode::GTE,
+            13 => Opcode::GT,
+            14 => Opcode::LTE,
+            15 => Opcode::LT,
+            16 => Opcode::JMPE,
+            17 => Opcode::NOP,
             _ => Opcode::IGL,
         }
     }
