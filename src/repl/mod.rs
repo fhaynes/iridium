@@ -3,7 +3,10 @@ use std::io;
 use std::num::ParseIntError;
 use std::io::Write;
 
+use nom::types::CompleteStr;
+
 use vm::VM;
+use assembler::program_parsers::{Program, program};
 
 /// Core structure for the REPL for the Assembler
 pub struct REPL {
@@ -64,17 +67,17 @@ impl REPL {
                     println!("End of Register Listing")
                 },
                 _ => {
-                    let results = self.parse_hex(buffer);
-                    match results {
-                        Ok(bytes) => {
-                            for byte in bytes {
-                                self.vm.add_byte(byte)
-                            }
-                        },
-                        Err(_e) => {
-                            println!("Unable to decode hex string. Please enter 4 groups of 2 hex characters.")
-                        }
-                    };
+                    let parsed_program = program(CompleteStr(buffer));
+                    if !parsed_program.is_ok() {
+                        println!("Unable to parse input");
+                        continue;
+                    }
+                    let (_, result) = parsed_program.unwrap();
+                    let bytecode = result.to_bytes();
+                    // TODO: Make a function to let us add multiple bytes to the VM
+                    for byte in bytecode {
+                        self.vm.add_byte(byte);
+                    }
                     self.vm.run_once();
                 }
             }

@@ -1,6 +1,6 @@
 /// Represents an opcode, which tells our interpreter what to do with the following operands
 /// Opcodes are a nice way to represent each of our Opcodes
-#[derive(Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Opcode {
     LOAD,
     ADD,

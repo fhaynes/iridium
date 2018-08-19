@@ -45,6 +45,11 @@ impl VM {
         self.program.push(b);
     }
 
+    /// Adds an arbitrary byte to the VM's program
+    pub fn add_bytes(&mut self, mut b: Vec<u8>) {
+        self.program.append(&mut b);
+    }
+
     /// Executes an instruction and returns a bool. Meant to be called by the various public run
     /// functions.
     fn execute_instruction(&mut self) -> bool {
