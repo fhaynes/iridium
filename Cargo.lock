@@ -1,6 +1,6 @@
 [[package]]
-name = "iridium_part_02"
-version = "0.1.0"
+name = "iridium"
+version = "0.0.1"
 dependencies = [
  "nom 4.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
