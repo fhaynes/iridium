@@ -1,5 +1,5 @@
-use nom::types::CompleteStr;
 use nom::digit;
+use nom::types::CompleteStr;
 
 use assembler::Token;
 
@@ -17,9 +17,10 @@ named!(pub register <CompleteStr, Token>,
     )
 );
 
-
 mod tests {
-    use super::*;
+    #![allow(unused_imports)]
+    use super::register;
+    use nom::types::CompleteStr;
 
     #[test]
     fn test_parse_register() {

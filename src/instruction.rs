@@ -51,15 +51,13 @@ impl From<u8> for Opcode {
 /// Represents a combination of an opcode and operands for the VM to execute
 #[derive(Debug, PartialEq)]
 pub struct Instruction {
-  opcode: Opcode
+    opcode: Opcode,
 }
 
 impl Instruction {
     /// Creates and returns a new Instruction
     pub fn new(opcode: Opcode) -> Instruction {
-        Instruction {
-            opcode: opcode
-        }
+        Instruction { opcode }
     }
 }
 
@@ -75,7 +73,7 @@ mod tests {
 
     #[test]
     fn test_create_instruction() {
-      let instruction = Instruction::new(Opcode::HLT);
-      assert_eq!(instruction.opcode, Opcode::HLT);
+        let instruction = Instruction::new(Opcode::HLT);
+        assert_eq!(instruction.opcode, Opcode::HLT);
     }
 }

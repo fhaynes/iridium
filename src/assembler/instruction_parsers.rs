@@ -1,11 +1,10 @@
-use std;
 use nom::types::CompleteStr;
+use std;
 
-use instruction::Opcode;
-use assembler::Token;
 use assembler::opcode_parsers::*;
 use assembler::operand_parsers::integer_operand;
 use assembler::register_parsers::register;
+use assembler::Token;
 
 #[derive(Debug, PartialEq)]
 pub struct AssemblerInstruction {
@@ -30,14 +29,13 @@ impl AssemblerInstruction {
             }
         };
 
-        for operand in vec![&self.operand1, &self.operand2, &self.operand3] {
-            match operand {
-                Some(t) => AssemblerInstruction::extract_operand(t, &mut results),
-                None => {}
+        for operand in &[&self.operand1, &self.operand2, &self.operand3] {
+            if let Some(token) = operand {
+                AssemblerInstruction::extract_operand(token, &mut results)
             }
         }
 
-        return results;
+        results
     }
 
     fn extract_operand(t: &Token, results: &mut Vec<u8>) {
