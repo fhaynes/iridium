@@ -1,6 +1,6 @@
 use nom::types::CompleteStr;
 
-use assembler::instruction_parsers::{instruction_one, AssemblerInstruction};
+use assembler::instruction_parsers::{instruction, AssemblerInstruction};
 
 #[derive(Debug, PartialEq)]
 pub struct Program {
@@ -19,7 +19,7 @@ impl Program {
 
 named!(pub program<CompleteStr, Program>,
     do_parse!(
-        instructions: many1!(instruction_one) >>
+        instructions: many1!(instruction) >>
         (
             Program {
                 instructions: instructions
