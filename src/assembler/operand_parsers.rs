@@ -2,10 +2,11 @@ use nom::digit;
 use nom::types::CompleteStr;
 
 use assembler::Token;
+use assembler::label_parsers::label_usage;
 
 /// Parser for all numbers, which have to be prefaced with `#` in our assembly language:
 /// #100
-named!(pub integer_operand<CompleteStr, Token>,
+named!(integer_operand<CompleteStr, Token>,
     ws!(
         do_parse!(
             tag!("#") >>
@@ -14,6 +15,13 @@ named!(pub integer_operand<CompleteStr, Token>,
                 Token::IntegerOperand{value: reg_num.parse::<i32>().unwrap()}
             )
         )
+    )
+);
+
+named!(pub operand<CompleteStr, Token>,
+    alt!(
+        integer_operand |
+        label_usage
     )
 );
 

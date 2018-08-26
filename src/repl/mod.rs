@@ -69,14 +69,20 @@ impl REPL {
                 _ => {
                     let program = match program(buffer.into()) {
                         // Rusts pattern matching is pretty powerful an can even be nested
-                        Ok((_, program)) => program,
+                        Ok((remainder, program)) => {
+                            println!("Remainder is: {:?}", remainder);
+                            println!("Program is: {:?}", program);
+                            program
+                        },
                         Err(_) => {
                             println!("Unable to parse input");
                             continue;
                         }
                     };
                     // The `program` is `pub` anyways so you can just `append` to the `Vec`
-                    self.vm.program.append(&mut program.to_bytes());
+
+                    // self.vm.program.append(&mut program.to_bytes());
+                    // self.vm.run_once();
                 }
             }
         }

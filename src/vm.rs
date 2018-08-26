@@ -101,7 +101,6 @@ impl VM {
             }
             Opcode::JMPF => {
                 let value = self.registers[self.next_8_bits() as usize] as usize;
-                println!("Value is: {:?}", value);
                 self.pc += value;
             }
             Opcode::JMPB => {
