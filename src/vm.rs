@@ -388,13 +388,13 @@ mod tests {
         test_vm.registers[1] = 10;
         test_vm.program = vec![12, 0, 1, 0, 12, 0, 1, 0, 12, 0, 1, 0];
         test_vm.run_once();
-        assert_eq!(test_vm.equal_flag, true);
+        assert_eq!(test_vm.equal_flag, false);
         test_vm.registers[0] = 10;
         test_vm.run_once();
-        assert_eq!(test_vm.equal_flag, false);
+        assert_eq!(test_vm.equal_flag, true);
         test_vm.registers[0] = 5;
         test_vm.run_once();
-        assert_eq!(test_vm.equal_flag, false);
+        assert_eq!(test_vm.equal_flag, true);
     }
 
     #[test]
@@ -407,7 +407,7 @@ mod tests {
         assert_eq!(test_vm.equal_flag, false);
         test_vm.registers[0] = 10;
         test_vm.run_once();
-        assert_eq!(test_vm.equal_flag, true);
+        assert_eq!(test_vm.equal_flag, false);
         test_vm.registers[0] = 5;
         test_vm.run_once();
         assert_eq!(test_vm.equal_flag, true);
@@ -420,13 +420,13 @@ mod tests {
         test_vm.registers[1] = 10;
         test_vm.program = vec![14, 0, 1, 0, 14, 0, 1, 0, 14, 0, 1, 0];
         test_vm.run_once();
-        assert_eq!(test_vm.equal_flag, false);
+        assert_eq!(test_vm.equal_flag, true);
         test_vm.registers[0] = 10;
         test_vm.run_once();
         assert_eq!(test_vm.equal_flag, false);
         test_vm.registers[0] = 5;
         test_vm.run_once();
-        assert_eq!(test_vm.equal_flag, true);
+        assert_eq!(test_vm.equal_flag, false);
     }
 
     #[test]

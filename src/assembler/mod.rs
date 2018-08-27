@@ -160,9 +160,9 @@ mod tests {
         let test_string = "load $0 #100\nload $1 #1\nload $2 #0\ntest: inc $0\nneq $0 $2\njmpe @test\nhlt";
         let program = asm.assemble(test_string).unwrap();
         let mut vm = VM::new();
-        assert_eq!(program.len(), 21);
+        assert_eq!(program.len(), 28);
         vm.add_bytes(program);
-        assert_eq!(vm.program.len(), 21);
+        assert_eq!(vm.program.len(), 28);
 
     }
 
