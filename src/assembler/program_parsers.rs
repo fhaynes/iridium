@@ -1,6 +1,7 @@
 use nom::types::CompleteStr;
 
 use assembler::instruction_parsers::{instruction, AssemblerInstruction};
+use assembler::directive_parsers::directive;
 use assembler::SymbolTable;
 
 #[derive(Debug, PartialEq)]
@@ -20,7 +21,7 @@ impl Program {
 
 named!(pub program<CompleteStr, Program>,
     do_parse!(
-        instructions: many1!(instruction) >>
+        instructions: many1!(alt!(instruction | directive)) >>
         (
             Program {
                 instructions: instructions

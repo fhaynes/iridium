@@ -3,6 +3,7 @@ use nom::types::CompleteStr;
 
 use assembler::Token;
 use assembler::label_parsers::label_usage;
+use assembler::register_parsers::register;
 
 /// Parser for all numbers, which have to be prefaced with `#` in our assembly language:
 /// #100
@@ -21,7 +22,8 @@ named!(integer_operand<CompleteStr, Token>,
 named!(pub operand<CompleteStr, Token>,
     alt!(
         integer_operand |
-        label_usage
+        label_usage |
+        register
     )
 );
 

@@ -10,7 +10,6 @@ pub enum Opcode {
     MUL,
     DIV,
     HLT,
-    IGL,
     JMP,
     JMPF,
     JMPB,
@@ -22,7 +21,11 @@ pub enum Opcode {
     GT,
     JMPE,
     NOP,
-    ALOC
+    ALOC,
+    INC,
+    DEC,
+    DJMPE,
+    IGL
 }
 
 /// We implement this trait to make it easy to convert from a u8 to an Opcode
@@ -41,12 +44,15 @@ impl From<u8> for Opcode {
             9 => Opcode::EQ,
             10 => Opcode::NEQ,
             11 => Opcode::GTE,
-            12 => Opcode::GT,
-            13 => Opcode::LTE,
-            14 => Opcode::LT,
+            12 => Opcode::LTE,
+            13 => Opcode::LT,
+            14 => Opcode::GT,
             15 => Opcode::JMPE,
             16 => Opcode::NOP,
             17 => Opcode::ALOC,
+            18 => Opcode::INC,
+            19 => Opcode::DEC,
+            20 => Opcode::DJMPE,
             _ => Opcode::IGL,
         }
     }
@@ -73,6 +79,9 @@ impl<'a> From<CompleteStr<'a>> for Opcode {
             CompleteStr("jmpe") => Opcode::JMPE,
             CompleteStr("nop") => Opcode::NOP,
             CompleteStr("aloc") => Opcode::ALOC,
+            CompleteStr("inc") => Opcode::INC,
+            CompleteStr("dec") => Opcode::DEC,
+            CompleteStr("djmpe") => Opcode::DJMPE,
             _ => Opcode::IGL,
         }
     }
