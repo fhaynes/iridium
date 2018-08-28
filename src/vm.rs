@@ -1,4 +1,8 @@
+use std;
+
 use instruction::Opcode;
+use assembler::PIE_HEADER_PREFIX;
+use assembler::PIE_HEADER_LENGTH;
 
 /// Virtual machine struct that will execute bytecode
 #[derive(Default)]
@@ -33,6 +37,13 @@ impl VM {
     /// Wraps execution in a loop so it will continue to run until done or there is an error
     /// executing instructions.
     pub fn run(&mut self) {
+        // TODO: Should setup custom errors here
+        if !self.verify_header() {
+            println!("Header was incorrect");
+            std::process::exit(1);
+        }
+        // If the header is valid, we need to change the PC to be at bit 65.
+        self.pc = 65;
         let mut is_done = false;
         while !is_done {
             is_done = self.execute_instruction();
@@ -234,6 +245,15 @@ impl VM {
         self.pc += 2;
         result
     }
+
+    /// Processes the header of bytecode the VM is asked to execute
+    fn verify_header(&self) -> bool {
+        println!("{:?}", self.program);
+        if self.program[0..4] != PIE_HEADER_PREFIX {
+            return false;
+        }
+        true
+    }
 }
 
 #[cfg(test)]
@@ -245,6 +265,18 @@ mod tests {
         test_vm.registers[0] = 5;
         test_vm.registers[1] = 10;
         test_vm
+    }
+
+    fn prepend_header(mut b: Vec<u8>) -> Vec<u8> {
+        let mut prepension = vec![];
+        for byte in PIE_HEADER_PREFIX.into_iter() {
+            prepension.push(byte.clone());
+        }
+        while prepension.len() <= PIE_HEADER_LENGTH {
+            prepension.push(0);
+        }
+        prepension.append(&mut b);
+        prepension
     }
 
     #[test]
@@ -275,6 +307,7 @@ mod tests {
     fn test_load_opcode() {
         let mut test_vm = get_test_vm();
         test_vm.program = vec![0, 0, 1, 244];
+        test_vm.program = prepend_header(test_vm.program);
         test_vm.run();
         assert_eq!(test_vm.registers[0], 500);
     }
@@ -283,6 +316,7 @@ mod tests {
     fn test_add_opcode() {
         let mut test_vm = get_test_vm();
         test_vm.program = vec![1, 0, 1, 2];
+        test_vm.program = prepend_header(test_vm.program);
         test_vm.run();
         assert_eq!(test_vm.registers[2], 15);
     }
@@ -291,6 +325,7 @@ mod tests {
     fn test_sub_opcode() {
         let mut test_vm = get_test_vm();
         test_vm.program = vec![2, 1, 0, 2];
+        test_vm.program = prepend_header(test_vm.program);
         test_vm.run();
         assert_eq!(test_vm.registers[2], 5);
     }
@@ -299,6 +334,7 @@ mod tests {
     fn test_mul_opcode() {
         let mut test_vm = get_test_vm();
         test_vm.program = vec![3, 0, 1, 2];
+        test_vm.program = prepend_header(test_vm.program);
         test_vm.run();
         assert_eq!(test_vm.registers[2], 50);
     }
@@ -307,6 +343,7 @@ mod tests {
     fn test_div_opcode() {
         let mut test_vm = get_test_vm();
         test_vm.program = vec![4, 1, 0, 2];
+        test_vm.program = prepend_header(test_vm.program);
         test_vm.run();
         assert_eq!(test_vm.registers[2], 2);
     }
