@@ -112,8 +112,6 @@ impl REPL {
                             continue;
                         }
                     }
-
-
                 }
                 _ => {
                     let program = match program(buffer.into()) {
