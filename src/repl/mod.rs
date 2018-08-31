@@ -101,14 +101,16 @@ impl REPL {
                     let mut contents = String::new();
                     f.read_to_string(&mut contents).expect("There was an error reading from the file");
                     match self.asm.assemble(&contents) {
-                        Some(mut assembled_program) => {
+                        Ok(mut assembled_program) => {
                             println!("Sending assembled program to VM");
                             self.vm.program.append(&mut assembled_program);
                             println!("{:#?}", self.vm.program);
                             self.vm.run();
                         },
-                        None => {
-                            println!("Unable to parse input");
+                        Err(errors) => {
+                            for error in errors {
+                                println!("Unable to parse input: {}", error);
+                            }
                             continue;
                         }
                     }

@@ -2,7 +2,7 @@ use std;
 
 use instruction::Opcode;
 use assembler::PIE_HEADER_PREFIX;
-use assembler::PIE_HEADER_LENGTH;
+
 
 /// Virtual machine struct that will execute bytecode
 #[derive(Default)]
@@ -19,6 +19,8 @@ pub struct VM {
     remainder: usize,
     /// Contains the result of the last comparison operation
     equal_flag: bool,
+    /// Contains the read-only section data
+    ro_data: Vec<u8>
 }
 
 impl VM {
@@ -27,6 +29,7 @@ impl VM {
         VM {
             registers: [0; 32],
             program: vec![],
+            ro_data: vec![],
             heap: vec![],
             pc: 0,
             remainder: 0,
@@ -218,7 +221,25 @@ impl VM {
                 } else {
                     self.next_8_bits();
                 }
-
+            }
+            Opcode::PRTS => {
+                // PRTS takes one operand, either a starting index in the read-only section of the bytecode
+                // or a symbol (in the form of @symbol_name), which will look up the offset in the symbol table.
+                // This instruction then reads each byte and prints it, until it comes to a 0x00 byte, which indicates
+                // termination of the string
+                let starting_offset = self.next_16_bits() as usize;
+                let mut ending_offset = starting_offset;
+                let slice = self.ro_data.as_slice();
+                // TODO: Find a better way to do this. Maybe we can store the byte length and not null terminate? Or some form of caching where we
+                // go through the entire ro_data on VM startup and find every string and its ending byte location?
+                while slice[ending_offset] != 0 {
+                    ending_offset += 1;
+                }
+                let result = std::str::from_utf8(&slice[starting_offset..ending_offset]);
+                match result {
+                    Ok(s) => { print!("{}", s); }
+                    Err(e) => { println!("Error decoding string for prts instruction: {:#?}", e) }
+                };
             }
         };
         false
@@ -259,6 +280,7 @@ impl VM {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use assembler::PIE_HEADER_LENGTH;
 
     fn get_test_vm() -> VM {
         let mut test_vm = VM::new();
@@ -483,5 +505,14 @@ mod tests {
         test_vm.program = vec![17, 0, 0, 0];
         test_vm.run_once();
         assert_eq!(test_vm.heap.len(), 1024);
+    }
+
+    #[test]
+    fn test_prts_opcode() {
+        let mut test_vm = get_test_vm();
+        test_vm.ro_data.append(&mut vec![72, 101, 108, 108, 111, 0]);
+        test_vm.program = vec![21, 0, 0, 0];
+        test_vm.run_once();
+        // TODO: How can we validate the output since it is just printing to stdout in a test?
     }
 }

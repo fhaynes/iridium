@@ -25,7 +25,8 @@ pub enum Opcode {
     INC,
     DEC,
     DJMPE,
-    IGL
+    IGL,
+    PRTS
 }
 
 /// We implement this trait to make it easy to convert from a u8 to an Opcode
@@ -53,11 +54,13 @@ impl From<u8> for Opcode {
             18 => Opcode::INC,
             19 => Opcode::DEC,
             20 => Opcode::DJMPE,
-            _ => Opcode::IGL,
+            21 => Opcode::PRTS,
+            _ => Opcode::IGL
         }
     }
 }
 
+/// Convenience function to convert nom CompleteStr into an opcode
 impl<'a> From<CompleteStr<'a>> for Opcode {
     fn from(v: CompleteStr<'a>) -> Self {
         match v {
@@ -82,6 +85,7 @@ impl<'a> From<CompleteStr<'a>> for Opcode {
             CompleteStr("inc") => Opcode::INC,
             CompleteStr("dec") => Opcode::DEC,
             CompleteStr("djmpe") => Opcode::DJMPE,
+            CompleteStr("prts") => Opcode::PRTS,
             _ => Opcode::IGL,
         }
     }

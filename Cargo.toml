@@ -10,6 +10,9 @@ repository = "https://gitlab.com/subnetzero/iridium"
 [dependencies]
 nom = "^4.0"
 clap = { version = "2.32", features = ["yaml"] }
+log = "0.4"
+env_logger = "0.5.13"
+byteorder = "1"
 
 [profile.dev]
 opt-level = 0
