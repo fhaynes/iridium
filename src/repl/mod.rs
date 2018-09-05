@@ -97,7 +97,13 @@ impl REPL {
                     println!("Attempting to load program from file...");
                     let tmp = tmp.trim();
                     let filename = Path::new(&tmp);
-                    let mut f = File::open(Path::new(&filename)).expect("File not found");
+                    let mut f = match File::open(&filename) {
+                        Ok(f) => { f }
+                        Err(e) => {
+                            println!("There was an error opening that file: {:?}", e);
+                            continue;
+                        }
+                    };
                     let mut contents = String::new();
                     f.read_to_string(&mut contents).expect("There was an error reading from the file");
                     match self.asm.assemble(&contents) {
@@ -114,6 +120,9 @@ impl REPL {
                             continue;
                         }
                     }
+                }
+                ".spawn" => {
+
                 }
                 _ => {
                     let program = match program(buffer.into()) {
