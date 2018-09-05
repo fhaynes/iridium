@@ -1,6 +1,6 @@
 [package]
 name = "iridium"
-version = "0.0.16"
+version = "0.0.17"
 authors = ["Fletcher Haynes <fletcher@subnetzero.io>"]
 description = "A high level, dynamic language written in Rust."
 license = "MIT"
