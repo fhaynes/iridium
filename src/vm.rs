@@ -296,7 +296,7 @@ mod tests {
         for byte in PIE_HEADER_PREFIX.into_iter() {
             prepension.push(byte.clone());
         }
-        while prepension.len() <= PIE_HEADER_LENGTH {
+        while prepension.len() < PIE_HEADER_LENGTH {
             prepension.push(0);
         }
         prepension.append(&mut b);
