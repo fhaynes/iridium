@@ -2,10 +2,11 @@ use std;
 
 use instruction::Opcode;
 use assembler::PIE_HEADER_PREFIX;
+use scheduler::Scheduler;
 
 
 /// Virtual machine struct that will execute bytecode
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct VM {
     /// Array that simulates having hardware registers
     pub registers: [i32; 32],
@@ -34,23 +35,25 @@ impl VM {
             pc: 0,
             remainder: 0,
             equal_flag: false,
+
         }
     }
 
     /// Wraps execution in a loop so it will continue to run until done or there is an error
     /// executing instructions.
-    pub fn run(&mut self) {
+    pub fn run(&mut self) -> u32 {
         // TODO: Should setup custom errors here
         if !self.verify_header() {
             println!("Header was incorrect");
-            std::process::exit(1);
+            return 1;
         }
         // If the header is valid, we need to change the PC to be at bit 65.
-        self.pc = 65;
+        self.pc = 64;
         let mut is_done = false;
         while !is_done {
             is_done = self.execute_instruction();
         }
+        0
     }
 
     /// Executes one instruction. Meant to allow for more controlled execution of the VM
@@ -269,7 +272,6 @@ impl VM {
 
     /// Processes the header of bytecode the VM is asked to execute
     fn verify_header(&self) -> bool {
-        println!("{:?}", self.program);
         if self.program[0..4] != PIE_HEADER_PREFIX {
             return false;
         }
