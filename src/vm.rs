@@ -4,7 +4,7 @@ use instruction::Opcode;
 use assembler::PIE_HEADER_PREFIX;
 use scheduler::Scheduler;
 
-
+pub const DEFAULT_HEAP_STARTING_SIZE: usize = 64;
 /// Virtual machine struct that will execute bytecode
 #[derive(Default, Clone)]
 pub struct VM {
@@ -31,7 +31,7 @@ impl VM {
             registers: [0; 32],
             program: vec![],
             ro_data: vec![],
-            heap: vec![],
+            heap: vec![0; DEFAULT_HEAP_STARTING_SIZE],
             pc: 0,
             remainder: 0,
             equal_flag: false,
@@ -506,7 +506,7 @@ mod tests {
         test_vm.registers[0] = 1024;
         test_vm.program = vec![17, 0, 0, 0];
         test_vm.run_once();
-        assert_eq!(test_vm.heap.len(), 1024);
+        assert_eq!(test_vm.heap.len(), 1024 + DEFAULT_HEAP_STARTING_SIZE);
     }
 
     #[test]
