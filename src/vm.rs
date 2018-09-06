@@ -2,7 +2,6 @@ use std;
 
 use instruction::Opcode;
 use assembler::PIE_HEADER_PREFIX;
-use scheduler::Scheduler;
 
 pub const DEFAULT_HEAP_STARTING_SIZE: usize = 64;
 /// Virtual machine struct that will execute bytecode
