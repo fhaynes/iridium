@@ -1,6 +1,6 @@
 use std::thread;
 
-use vm::VM;
+use vm::{VM, VMEvent};
 
 #[derive(Default)]
 pub struct Scheduler {
@@ -17,9 +17,15 @@ impl Scheduler {
     }
 
     /// Takes a VM and runs it in a background thread
-    pub fn get_thread(&mut self, mut vm: VM) -> thread::JoinHandle<u32> {
+    pub fn get_thread(&mut self, mut vm: VM) -> thread::JoinHandle<Vec<VMEvent>> {
       thread::spawn(move || {
-          vm.run()
+          let events = vm.run();
+          println!("VM Events");
+          println!("--------------------------");
+          for event in &events {
+              println!("{:#?}", event);
+          };
+          events
       })
     }
 }

@@ -10,6 +10,8 @@ extern crate clap;
 extern crate log;
 extern crate env_logger;
 extern crate byteorder;
+extern crate uuid;
+extern crate chrono;
 
 use clap::App;
 
@@ -34,7 +36,12 @@ fn main() {
             match program {
                 Ok(p) => {
                     vm.add_bytes(p);
-                    vm.run();
+                    let events = vm.run();
+                    println!("VM Events");
+                    println!("--------------------------");
+                    for event in &events {
+                        println!("{:#?}", event);
+                    };
                     std::process::exit(0);
                 },
                 Err(_e) => {
