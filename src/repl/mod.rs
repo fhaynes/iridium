@@ -1,3 +1,5 @@
+pub mod command_parser;
+
 use std;
 use std::io;
 use std::io::Write;
@@ -6,10 +8,16 @@ use std::fs::File;
 use std::num::ParseIntError;
 use std::path::Path;
 
+use nom::types::CompleteStr;
+
 use assembler::program_parsers::program;
 use assembler::Assembler;
 use vm::VM;
 use scheduler::Scheduler;
+use repl::command_parser::CommandParser;
+
+const COMMAND_PREFIX: char = '!';
+
 /// Core structure for the REPL for the Assembler
 pub struct REPL {
     command_buffer: Vec<String>,
@@ -28,7 +36,6 @@ impl REPL {
             scheduler: Scheduler::new()
         }
     }
-
 
     /// Run loop similar to the VM execution loop, but the instructions are taken from the user directly
     /// at the terminal and not from pre-compiled bytecode
@@ -51,101 +58,24 @@ impl REPL {
             stdin
                 .read_line(&mut buffer)
                 .expect("Unable to read line from user");
-            let buffer = buffer.trim();
-            self.command_buffer.push(buffer.to_string());
-            match buffer {
-                ".quit" => {
-                    println!("Farewell! Have a great day!");
-                    std::process::exit(0);
-                }
-                ".history" => {
-                    for command in &self.command_buffer {
-                        println!("{}", command);
-                    }
-                }
-                ".program" => {
-                    println!("Listing instructions currently in VM's program vector:");
-                    for instruction in &self.vm.program {
-                        println!("{}", instruction);
-                    }
-                    println!("End of Program Listing");
-                }
-                ".clear_program" => {
-                    println!("Removing all bytes from VM's program vector...");
-                    self.vm.program.truncate(0);
-                    println!("Done!");
-                }
-                ".clear_registers" => {
-                    println!("Setting all registers to 0");
-                    for i in 0..self.vm.registers.len() {
-                        self.vm.registers[i] = 0;
-                    }
-                    println!("Done!");
-                }
-                ".registers" => {
-                    println!("Listing registers and all contents:");
-                    println!("{:#?}", self.vm.registers);
-                    println!("End of Register Listing")
-                }
-                ".symbols" => {
-                    println!("Listing symbols table:");
-                    println!("{:#?}", self.asm.symbols);
-                    println!("End of Symbols Listing");
-                }
-                ".load_file" => {
-                    let contents = self.get_data_from_load();
-                    if let Some(contents) = contents {
-                        match self.asm.assemble(&contents) {
-                            Ok(mut assembled_program) => {
-                                println!("Sending assembled program to VM");
-                                self.vm.program.append(&mut assembled_program);
-                                println!("{:#?}", self.vm.program);
-                                self.vm.run();
-                            },
-                            Err(errors) => {
-                                for error in errors {
-                                    println!("Unable to parse input: {}", error);
-                                }
-                                continue;
-                            }
-                        }
-                    } else { continue; }
-                }
-                ".spawn" => {
-                    let contents = self.get_data_from_load();
-                    println!("Loaded conents: {:#?}", contents);
-                    if let Some(contents) = contents {
-                        match self.asm.assemble(&contents) {
-                            Ok(mut assembled_program) => {
-                                println!("Sending assembled program to VM");
-                                self.vm.program.append(&mut assembled_program);
-                                println!("{:#?}", self.vm.program);
-                                self.scheduler.get_thread(self.vm.clone());
-                            },
-                            Err(errors) => {
-                                for error in errors {
-                                    println!("Unable to parse input: {}", error);
-                                }
-                                continue;
-                            }
-                        }
-                    } else { continue; }
-                }
-                _ => {
-                    let program = match program(buffer.into()) {
-                        // Rusts pattern matching is pretty powerful an can even be nested
-                        Ok((_remainder, program)) => {
-                            program
-                        },
-                        Err(e) => {
-                            println!("Unable to parse input: {:?}", e);
-                            continue;
-                        }
-                    };
 
-                    self.vm.program.append(&mut program.to_bytes(&self.asm.symbols));
-                    self.vm.run_once();
-                }
+            let historical_copy = buffer.clone();
+            self.command_buffer.push(historical_copy);
+
+            if buffer.starts_with("!") {
+                self.execute_command(&buffer);
+            } else {
+                let program = match program(CompleteStr(&buffer)) {
+                    Ok((_remainder, program)) => {
+                        program
+                    },
+                    Err(e) => {
+                        println!("Unable to parse input: {:?}", e);
+                        continue;
+                    }
+                };
+                self.vm.program.append(&mut program.to_bytes(&self.asm.symbols));
+                self.vm.run_once();
             }
         }
     }
@@ -198,6 +128,110 @@ impl REPL {
             }
         }
         Ok(results)
+    }
+
+    fn execute_command(&mut self, input: &str) {
+        let args = CommandParser::tokenize(input);
+        match args[0] {
+            "!quit" => self.quit(&args[1..]),
+            "!history" => self.history(&args[1..]),
+            "!program" => self.program(&args[1..]),
+            "!clear_program" => self.clear_program(&args[1..]),
+            "!clear_registers" => self.clear_registers(&args[1..]),
+            "!registers" => self.registers(&args[1..]),
+            "!symbols" => self.symbols(&args[1..]),
+            "!load_file" => self.load_file(&args[1..]),
+            "!spawn" => self.spawn(&args[1..]),
+            _ => { println!("Invalid command!") }
+        };
+    }
+
+    fn quit(&mut self, args: &[&str]) {
+        println!("Farewell! Have a great day!");
+        std::process::exit(0);
+    }
+
+    fn history(&mut self, args: &[&str]) {
+        for command in &self.command_buffer {
+            println!("{}", command);
+        }
+    }
+
+    fn program(&mut self, args: &[&str]) {
+        println!("Listing instructions currently in VM's program vector:");
+        for instruction in &self.vm.program {
+            println!("{}", instruction);
+        }
+        println!("End of Program Listing");
+    }
+
+    fn clear_program(&mut self, args: &[&str]) {
+        self.vm.program.clear();
+    }
+
+    fn clear_registers(&mut self, args: &[&str]) {
+        println!("Setting all registers to 0");
+        for i in 0..self.vm.registers.len() {
+            self.vm.registers[i] = 0;
+        }
+        println!("Done!");
+    }
+
+    fn registers(&mut self, args: &[&str]) {
+        println!("Listing registers and all contents:");
+        println!("{:#?}", self.vm.registers);
+        println!("End of Register Listing")
+    }
+
+    fn symbols(&mut self, args: &[&str]) {
+        println!("Listing symbols table:");
+        println!("{:#?}", self.asm.symbols);
+        println!("End of Symbols Listing");
+    }
+
+    fn load_file(&mut self, args: &[&str]) {
+        let contents = self.get_data_from_load();
+        if let Some(contents) = contents {
+            match self.asm.assemble(&contents) {
+                Ok(mut assembled_program) => {
+                    println!("Sending assembled program to VM");
+                    self.vm.program.append(&mut assembled_program);
+                    println!("{:#?}", self.vm.program);
+                    self.vm.run();
+                },
+                Err(errors) => {
+                    for error in errors {
+                        println!("Unable to parse input: {}", error);
+                    }
+                    return;
+                }
+            }
+        } else {
+            return;
+        }
+    }
+
+    fn spawn(&mut self, args: &[&str]) {
+        let contents = self.get_data_from_load();
+        println!("Loaded contents: {:#?}", contents);
+        if let Some(contents) = contents {
+            match self.asm.assemble(&contents) {
+                Ok(mut assembled_program) => {
+                    println!("Sending assembled program to VM");
+                    self.vm.program.append(&mut assembled_program);
+                    println!("{:#?}", self.vm.program);
+                    self.scheduler.get_thread(self.vm.clone());
+                },
+                Err(errors) => {
+                    for error in errors {
+                        println!("Unable to parse input: {}", error);
+                    }
+                    return;
+                }
+            }
+        } else {
+            return;
+        }
     }
 }
 

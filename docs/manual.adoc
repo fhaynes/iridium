@@ -118,3 +118,15 @@ The first byte of a 4-byte wide instruction is the Opcode. The following Opcodes
 | DJMPE 2+| Destination | Unused              | Direct jump to the value specified _in the assembly_ if the VM's equal_flag is true. Does not use registers.
 | PRTS  2+| Offset      | Unused              | Takes an offset into the read-only section and prints a string that starts at that offset
 |=========================================================================
+
+== 4.0 Shell Environment
+Iridium provides a shell environment that can be accessed locally or remotely via SSH. REPL (or interactive interpreter) is built in to this shell.
+
+=== 4.1 Invocation
+The Iridium shell can be invoked by running the `iridium` executable without a path argument. If the `iridium` executable is started in server mode, then it will listen on the configured interface and port for SSH traffic. When operating in REPL mode, there is a default VM created to execute code.
+
+=== 4.2 Commands
+The shell has commands meant to manage running Iridium programs and VMs. These are meant to provide command-and-control functionality for applications running in the VM. Every command is prefaced with the command character, which is currently: `@`.
+
+=== 4.3 Executing Code
+Any user input that does not begin with the command character is treated as code to be executed by the default VM.
