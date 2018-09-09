@@ -2,7 +2,7 @@
 Yay! We're so happy you want to contribute! Below are the various rules and guidelines for doing so.
 
 ## A Warning
-*DO NOT USER IRIDIUM FOR _ANYTHING_ IN PRODUCTION*
+*DO NOT USE IRIDIUM FOR _ANYTHING_ IN PRODUCTION*
 
 It is primarily a teaching tool at https://blog.subnetzero.io, and while it may someday be suitable for production use, it isn't right now.
 
