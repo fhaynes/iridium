@@ -11,7 +11,7 @@ cache:
 .prepare-rust-image: &prepare-rust-image
     stage: prepare
     tags:
-        - docker-available
+        - docker
     script:
         - JOB_NAME=( $CI_JOB_NAME )
         - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
