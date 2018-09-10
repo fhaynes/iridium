@@ -3,8 +3,6 @@ use std::fs::File;
 use std::io::prelude::*;
 
 #[macro_use]
-extern crate nom;
-#[macro_use]
 extern crate clap;
 #[macro_use]
 extern crate log;
@@ -13,13 +11,11 @@ extern crate byteorder;
 extern crate uuid;
 extern crate chrono;
 
+extern crate iridium;
+use iridium::assembler::Assembler;
+use iridium::vm::VM;
+use iridium::repl::REPL;
 use clap::App;
-
-pub mod assembler;
-pub mod instruction;
-pub mod repl;
-pub mod vm;
-pub mod scheduler;
 
 fn main() {
     env_logger::init();
@@ -30,8 +26,8 @@ fn main() {
     match target_file {
         Some(filename) => {
             let program = read_file(filename);
-            let mut asm = assembler::Assembler::new();
-            let mut vm = vm::VM::new();
+            let mut asm = Assembler::new();
+            let mut vm = VM::new();
             let program = asm.assemble(&program);
             match program {
                 Ok(p) => {
@@ -56,7 +52,7 @@ fn main() {
 }
 
 fn start_repl() {
-    let mut repl = repl::REPL::new();
+    let mut repl = REPL::new();
     repl.run();
 }
 
