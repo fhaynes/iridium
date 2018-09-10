@@ -28,4 +28,20 @@ impl Scheduler {
           events
       })
     }
+
+    fn _next_pid(&mut self) -> u32 {
+        let result = self.next_pid;
+        self.next_pid += 1;
+        result
+    }
+}
+
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_make_scheduler() {
+        let s = Scheduler::new();
+        assert_eq!(s.next_pid, 0);
+    }
 }

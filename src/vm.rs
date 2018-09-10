@@ -5,7 +5,6 @@ use uuid::Uuid;
 
 use instruction::Opcode;
 use assembler::PIE_HEADER_PREFIX;
-use scheduler::Scheduler;
 
 #[derive(Clone, Debug)]
 pub enum VMEventType {
@@ -68,7 +67,7 @@ impl VM {
             VMEvent{
                 event: VMEventType::Start,
                 at: Utc::now(),
-                application_id: self.id.clone()
+                application_id: self.id
             }
         );
         // TODO: Should setup custom errors here
@@ -79,7 +78,7 @@ impl VM {
                         code: 1
                     },
                     at: Utc::now(),
-                    application_id: self.id.clone()
+                    application_id: self.id
                 }
             );
             println!("Header was incorrect");
@@ -96,7 +95,7 @@ impl VM {
                 event: VMEventType::GracefulStop{
                     code: is_done.unwrap()},
                     at: Utc::now(),
-                    application_id: self.id.clone()
+                    application_id: self.id
             }
         );
         self.events.clone()

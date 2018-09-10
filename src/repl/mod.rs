@@ -62,7 +62,7 @@ impl REPL {
             let historical_copy = buffer.clone();
             self.command_buffer.push(historical_copy);
 
-            if buffer.starts_with("!") {
+            if buffer.starts_with(COMMAND_PREFIX) {
                 self.execute_command(&buffer);
             } else {
                 let program = match program(CompleteStr(&buffer)) {
@@ -146,18 +146,18 @@ impl REPL {
         };
     }
 
-    fn quit(&mut self, args: &[&str]) {
+    fn quit(&mut self, _args: &[&str]) {
         println!("Farewell! Have a great day!");
         std::process::exit(0);
     }
 
-    fn history(&mut self, args: &[&str]) {
+    fn history(&mut self, _args: &[&str]) {
         for command in &self.command_buffer {
             println!("{}", command);
         }
     }
 
-    fn program(&mut self, args: &[&str]) {
+    fn program(&mut self, _args: &[&str]) {
         println!("Listing instructions currently in VM's program vector:");
         for instruction in &self.vm.program {
             println!("{}", instruction);
@@ -165,11 +165,11 @@ impl REPL {
         println!("End of Program Listing");
     }
 
-    fn clear_program(&mut self, args: &[&str]) {
+    fn clear_program(&mut self, _args: &[&str]) {
         self.vm.program.clear();
     }
 
-    fn clear_registers(&mut self, args: &[&str]) {
+    fn clear_registers(&mut self, _args: &[&str]) {
         println!("Setting all registers to 0");
         for i in 0..self.vm.registers.len() {
             self.vm.registers[i] = 0;
@@ -177,19 +177,19 @@ impl REPL {
         println!("Done!");
     }
 
-    fn registers(&mut self, args: &[&str]) {
+    fn registers(&mut self, _args: &[&str]) {
         println!("Listing registers and all contents:");
         println!("{:#?}", self.vm.registers);
         println!("End of Register Listing")
     }
 
-    fn symbols(&mut self, args: &[&str]) {
+    fn symbols(&mut self, _args: &[&str]) {
         println!("Listing symbols table:");
         println!("{:#?}", self.asm.symbols);
         println!("End of Symbols Listing");
     }
 
-    fn load_file(&mut self, args: &[&str]) {
+    fn load_file(&mut self, _args: &[&str]) {
         let contents = self.get_data_from_load();
         if let Some(contents) = contents {
             match self.asm.assemble(&contents) {
@@ -211,7 +211,7 @@ impl REPL {
         }
     }
 
-    fn spawn(&mut self, args: &[&str]) {
+    fn spawn(&mut self, _args: &[&str]) {
         let contents = self.get_data_from_load();
         println!("Loaded contents: {:#?}", contents);
         if let Some(contents) = contents {
