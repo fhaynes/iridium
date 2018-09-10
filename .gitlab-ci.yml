@@ -1,5 +1,9 @@
 image: "rust:latest"
 
+stages:
+  - test
+  - build
+
 variables:
   CARGO_HOME: $CI_PROJECT_DIR/cargo
   APT_CACHE_DIR: $CI_PROJECT_DIR/apt
@@ -9,13 +13,16 @@ before_script:
   - apt-get install -yqq --no-install-recommends build-essential
 
 # Use cargo to test the project
-test:cargo:
+cargo test:
+  stage: test
   script:
     - rustc --version && cargo --version      # Print version info for debugging
     - cargo test --all --verbose
 
-build:cargo:
+cargo build:
+  stage: test
   script:
+    - rustc --version && cargo --version      # Print version info for debugging
     - cargo build --release
     - strip target/release/iridium
   artifacts:
