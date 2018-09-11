@@ -2,5 +2,4 @@
 A simple register-based VM in Rust
 
 ## Important
-This repo is mirrored from the GitLab repo, which is considered authoritative. It is available here: https://gitlab.com/subnetzero/iridium
-
+The GitLab repo is the authoritative repo. All work occurs there. It is available at: https://gitlab.com/subnetzero/iridium
