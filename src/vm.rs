@@ -121,62 +121,37 @@ impl VM {
             Opcode::EQ => {
                 let register1 = self.registers[self.next_8_bits() as usize];
                 let register2 = self.registers[self.next_8_bits() as usize];
-                if register1 == register2 {
-                    self.equal_flag = true;
-                } else {
-                    self.equal_flag = false;
-                }
+                self.equal_flag = register1 == register2;
                 self.next_8_bits();
             }
             Opcode::NEQ => {
                 let register1 = self.registers[self.next_8_bits() as usize];
                 let register2 = self.registers[self.next_8_bits() as usize];
-                if register1 != register2 {
-                    self.equal_flag = true;
-                } else {
-                    self.equal_flag = false;
-                }
-
+                self.equal_flag = register1 != register2;
                 self.next_8_bits();
             }
             Opcode::GT => {
                 let register1 = self.registers[self.next_8_bits() as usize];
                 let register2 = self.registers[self.next_8_bits() as usize];
-                if register1 > register2 {
-                    self.equal_flag = true;
-                } else {
-                    self.equal_flag = false;
-                }
+                self.equal_flag = register1 > register2;
                 self.next_8_bits();
             }
             Opcode::GTE => {
                 let register1 = self.registers[self.next_8_bits() as usize];
                 let register2 = self.registers[self.next_8_bits() as usize];
-                if register1 >= register2 {
-                    self.equal_flag = true
-                } else {
-                    self.equal_flag = false
-                }
+                self.equal_flag = register1 >= register2;  
                 self.next_8_bits();
             }
             Opcode::LT => {
                 let register1 = self.registers[self.next_8_bits() as usize];
                 let register2 = self.registers[self.next_8_bits() as usize];
-                if register1 < register2 {
-                    self.equal_flag = true;
-                } else {
-                    self.equal_flag = false;
-                }
+                self.equal_flag = register1 < register2;
                 self.next_8_bits();
             }
             Opcode::LTE => {
                 let register1 = self.registers[self.next_8_bits() as usize];
                 let register2 = self.registers[self.next_8_bits() as usize];
-                if register1 <= register2 {
-                    self.equal_flag = true;
-                } else {
-                    self.equal_flag = false;
-                }
+                self.equal_flag = register1 <= register2;
                 self.next_8_bits();
             }
             Opcode::JMPE => {
