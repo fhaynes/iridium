@@ -1,5 +1,3 @@
-use std;
-
 use nom::types::CompleteStr;
 
 use assembler::opcode_parsers::*;
@@ -19,28 +17,25 @@ pub struct AssemblerInstruction {
 impl AssemblerInstruction {
     pub fn to_bytes(&self, symbols: &SymbolTable) -> Vec<u8> {
         let mut results = vec![];
-        match self.opcode {
-            Some(ref token) => {
-                match token {
-                    Token::Op { code } => match code {
-                        _ => {
-                            results.push(*code as u8);
-                        }
-                    },
+        if let Some(ref token) = self.opcode {
+            match token {
+                Token::Op { code } => match code {
                     _ => {
-                        println!("Non-opcode found in opcode field");
-                        std::process::exit(1);
+                        results.push(*code as u8);
                     }
+                },
+                _ => {
+                    println!("Non-opcode found in opcode field");
                 }
             }
-            None => {},
-        };
+        }
 
         for operand in &[&self.operand1, &self.operand2, &self.operand3] {
             if let Some(token) = operand {
                 AssemblerInstruction::extract_operand(token, &mut results, symbols)
             }
         }
+
         while results.len() < 4 {
             results.push(0);
         }
@@ -60,7 +55,42 @@ impl AssemblerInstruction {
         self.directive.is_some()
     }
 
-    pub fn label_name(&self) -> Option<String> {
+    /// Checks if the AssemblyInstruction has any operands at all
+    pub fn has_operands(&self) -> bool {
+        self.operand1.is_some() ||
+        self.operand2.is_some() ||
+        self.operand3.is_some()
+    }
+
+    pub fn get_directive_name(&self) -> Option<String> {
+        match &self.directive {
+            Some(d) => {
+                match d {
+                    Token::Directive { name } => {
+                        Some(name.to_string())
+                    }
+                    _ => { None }
+                }
+            }
+            None => { None }
+        }
+    }
+
+    pub fn get_string_constant(&self) -> Option<String> {
+        match &self.operand1 {
+            Some(d) => {
+                match d {
+                    Token::IrString { name } => {
+                        Some(name.to_string())
+                    }
+                    _ => None
+                }
+            }
+            None => { None }
+        }
+    }
+
+    pub fn get_label_name(&self) -> Option<String> {
         match &self.label {
             Some(l) => {
                 match l {
@@ -89,19 +119,15 @@ impl AssemblerInstruction {
                 results.push(byte1 as u8);
             }
             Token::LabelUsage { name } => {
-                match symbols.symbol_value(name) {
-                    Some(value) => {
-                        let byte1 = value;
-                        let byte2 = value >> 8;
-                        results.push(byte2 as u8);
-                        results.push(byte1 as u8);
-                    },
-                    None => {}
+                if let Some(value) = symbols.symbol_value(name) {
+                    let byte1 = value;
+                    let byte2 = value >> 8;
+                    results.push(byte2 as u8);
+                    results.push(byte1 as u8);
                 }
             }
             _ => {
-                println!("Opcode found in operand field");
-                std::process::exit(1);
+                println!("Opcode found in operand field: {:#?}", t);
             }
         };
     }

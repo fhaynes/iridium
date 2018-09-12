@@ -1,0 +1,58 @@
+= Palladium Language Specification
+:toc:
+:author: Fletcher Haynes
+:email: fletcher@subnetzero.io
+
+[NOTE]
+Most of this was blatantly stolen from https://docs.python.org/3/reference/lexical_analysis.html[the Python spec].
+
+== 1.0 Introduction
+This document describes the authoritative specification for a dynamic, high-level programming language called Palladium. Syntactically it is modeled after Python with parsing handled by the Rust library https://github.com/Geal/nom[Nom]. Palladium compiles to bytecode that is executed by the Iridium VM.
+
+=== 1.1 Principals
+There's two guiding principals important to understand about Palladium.
+
+=== 1.1.1 Palladium is Opinionated...
+...in that it shares most of Python 3's opinions. This is intentional. Python is a solid, high-level language that has find a wide audience. It's easy to learn, easy to read, and easy to use for a variety of tasks.
+
+The focus of this project is the underlying language VM, not the design of a new programming language.
+
+Plus I like Python. =)
+
+== 2.0 Structure
+This section describes the properties of a correct Palladium program.
+
+=== 2.1 Lines
+Like Python, Palladium programs are divided into logical lines separated by a NEWLINE token. A logical line may be composed of multiple physical lines in the following cases:
+
+. The physical lines end in a backslash: `\`
+. Expressions in parentheses, brackets or braces
+
+=== 2.2 Comments
+Comments follow these rules:
+
+. A comment begins with a hash mark (`#`) and continues until the end of the *_physical_* line
+. A comment ends a *_logical_* line
+. The parser ignores comments; they do not make it into the AST
+
+=== 2.3 Blank Lines
+Blank lines work differently in an interactive (REPL) environment versus a source code file. A blank line is defined as any line that contains only a comment, a carriage return, a tab, a newline or a space.
+
+==== 2.3.1 REPL
+In a REPL, a blank line terminates a multiline statement, such as a function definition.
+
+==== 2.3.2 Source Code
+The parser ignores blank lines.
+
+== 2.4 Indentation and Whitespace
+Indentation is significant in Palladium and stricter than in Python. Each level of indentation consists of 4 spaces. Tabs are not permitted as indentation.
+
+=== 2.4.1 Whitespace Between Tokens
+Any amount of whitespace (spaces or tabs) may separate tokens subject to the rules of logical lines.
+
+== 2.5 Identifiers and Keywords
+Identifiers (also referred to as names) are described by the following lexical definitions:
+
+. Within the ASCII range (U+0001..U+007F), the valid characters for identifiers are: the uppercase and lowercase letters A through Z, the underscore _ and, except for the first character, the digits 0 through 9
+. Identifiers are unlimited in length
+. Case is significant

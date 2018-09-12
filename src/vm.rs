@@ -1,11 +1,28 @@
 use std;
 
+use chrono::prelude::*;
+use uuid::Uuid;
+
 use instruction::Opcode;
 use assembler::PIE_HEADER_PREFIX;
-use assembler::PIE_HEADER_LENGTH;
 
+#[derive(Clone, Debug)]
+pub enum VMEventType {
+    Start,
+    GracefulStop{code: u32},
+    Crash{code: u32}
+}
+
+#[derive(Clone, Debug)]
+pub struct VMEvent {
+    event: VMEventType,
+    at: DateTime<Utc>,
+    application_id: Uuid
+}
+
+pub const DEFAULT_HEAP_STARTING_SIZE: usize = 64;
 /// Virtual machine struct that will execute bytecode
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct VM {
     /// Array that simulates having hardware registers
     pub registers: [i32; 32],
@@ -19,6 +36,12 @@ pub struct VM {
     remainder: usize,
     /// Contains the result of the last comparison operation
     equal_flag: bool,
+    /// Contains the read-only section data
+    ro_data: Vec<u8>,
+    /// Is a unique, randomly generated UUID for identifying this VM
+    id: Uuid,
+    /// Keeps a list of events for a particular VM
+    events: Vec<VMEvent>
 }
 
 impl VM {
@@ -27,27 +50,55 @@ impl VM {
         VM {
             registers: [0; 32],
             program: vec![],
-            heap: vec![],
+            ro_data: vec![],
+            heap: vec![0; DEFAULT_HEAP_STARTING_SIZE],
             pc: 0,
             remainder: 0,
             equal_flag: false,
+            id: Uuid::new_v4(),
+            events: Vec::new()
         }
     }
 
     /// Wraps execution in a loop so it will continue to run until done or there is an error
     /// executing instructions.
-    pub fn run(&mut self) {
+    pub fn run(&mut self) -> Vec<VMEvent> {
+        self.events.push(
+            VMEvent{
+                event: VMEventType::Start,
+                at: Utc::now(),
+                application_id: self.id
+            }
+        );
         // TODO: Should setup custom errors here
         if !self.verify_header() {
+            self.events.push(
+                VMEvent{
+                    event: VMEventType::Crash{
+                        code: 1
+                    },
+                    at: Utc::now(),
+                    application_id: self.id
+                }
+            );
             println!("Header was incorrect");
-            std::process::exit(1);
+            return self.events.clone();
         }
         // If the header is valid, we need to change the PC to be at bit 65.
-        self.pc = 65;
-        let mut is_done = false;
-        while !is_done {
+        self.pc = 64;
+        let mut is_done = None;
+        while is_done.is_none() {
             is_done = self.execute_instruction();
         }
+        self.events.push(
+            VMEvent{
+                event: VMEventType::GracefulStop{
+                    code: is_done.unwrap()},
+                    at: Utc::now(),
+                    application_id: self.id
+            }
+        );
+        self.events.clone()
     }
 
     /// Executes one instruction. Meant to allow for more controlled execution of the VM
@@ -67,9 +118,9 @@ impl VM {
 
     /// Executes an instruction and returns a bool. Meant to be called by the various public run
     /// functions.
-    fn execute_instruction(&mut self) -> bool {
+    fn execute_instruction(&mut self) -> Option<u32> {
         if self.pc >= self.program.len() {
-            return true;
+            return Some(1);
         }
         match self.decode_opcode() {
             Opcode::LOAD => {
@@ -100,11 +151,11 @@ impl VM {
             }
             Opcode::HLT => {
                 println!("HLT encountered");
-                return true;
+                return Some(0);
             }
             Opcode::IGL => {
                 println!("Illegal instruction encountered");
-                return true;
+                return Some(1);
             }
             Opcode::JMP => {
                 let target = self.registers[self.next_8_bits() as usize];
@@ -193,10 +244,28 @@ impl VM {
                 } else {
                     self.next_8_bits();
                 }
-
+            }
+            Opcode::PRTS => {
+                // PRTS takes one operand, either a starting index in the read-only section of the bytecode
+                // or a symbol (in the form of @symbol_name), which will look up the offset in the symbol table.
+                // This instruction then reads each byte and prints it, until it comes to a 0x00 byte, which indicates
+                // termination of the string
+                let starting_offset = self.next_16_bits() as usize;
+                let mut ending_offset = starting_offset;
+                let slice = self.ro_data.as_slice();
+                // TODO: Find a better way to do this. Maybe we can store the byte length and not null terminate? Or some form of caching where we
+                // go through the entire ro_data on VM startup and find every string and its ending byte location?
+                while slice[ending_offset] != 0 {
+                    ending_offset += 1;
+                }
+                let result = std::str::from_utf8(&slice[starting_offset..ending_offset]);
+                match result {
+                    Ok(s) => { print!("{}", s); }
+                    Err(e) => { println!("Error decoding string for prts instruction: {:#?}", e) }
+                };
             }
         };
-        false
+        None
     }
 
     /// Attempts to decode the byte the VM's program counter is pointing at into an opcode
@@ -223,7 +292,6 @@ impl VM {
 
     /// Processes the header of bytecode the VM is asked to execute
     fn verify_header(&self) -> bool {
-        println!("{:?}", self.program);
         if self.program[0..4] != PIE_HEADER_PREFIX {
             return false;
         }
@@ -234,6 +302,7 @@ impl VM {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use assembler::PIE_HEADER_LENGTH;
 
     fn get_test_vm() -> VM {
         let mut test_vm = VM::new();
@@ -247,7 +316,7 @@ mod tests {
         for byte in PIE_HEADER_PREFIX.into_iter() {
             prepension.push(byte.clone());
         }
-        while prepension.len() <= PIE_HEADER_LENGTH {
+        while prepension.len() < PIE_HEADER_LENGTH {
             prepension.push(0);
         }
         prepension.append(&mut b);
@@ -457,6 +526,15 @@ mod tests {
         test_vm.registers[0] = 1024;
         test_vm.program = vec![17, 0, 0, 0];
         test_vm.run_once();
-        assert_eq!(test_vm.heap.len(), 1024);
+        assert_eq!(test_vm.heap.len(), 1024 + DEFAULT_HEAP_STARTING_SIZE);
+    }
+
+    #[test]
+    fn test_prts_opcode() {
+        let mut test_vm = get_test_vm();
+        test_vm.ro_data.append(&mut vec![72, 101, 108, 108, 111, 0]);
+        test_vm.program = vec![21, 0, 0, 0];
+        test_vm.run_once();
+        // TODO: How can we validate the output since it is just printing to stdout in a test?
     }
 }

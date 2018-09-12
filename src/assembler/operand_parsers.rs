@@ -1,4 +1,4 @@
-use nom::digit;
+use nom::{digit};
 use nom::types::CompleteStr;
 
 use assembler::Token;
@@ -19,17 +19,29 @@ named!(integer_operand<CompleteStr, Token>,
     )
 );
 
+named!(irstring<CompleteStr, Token>,
+    do_parse!(
+        tag!("'") >>
+        content: take_until!("'") >>
+        tag!("'") >>
+        (
+            Token::IrString{ name: content.to_string() }
+        )
+    )
+);
+
 named!(pub operand<CompleteStr, Token>,
     alt!(
         integer_operand |
         label_usage |
-        register
+        register |
+        irstring
     )
 );
 
 mod tests {
     #![allow(unused_imports)]
-    use super::integer_operand;
+    use super::{integer_operand, irstring};
     use assembler::Token;
     use nom::types::CompleteStr;
 
@@ -43,5 +55,11 @@ mod tests {
 
         let result = integer_operand(CompleteStr("10"));
         assert_eq!(result.is_ok(), false);
+    }
+
+    #[test]
+    fn test_parse_string_operand() {
+        let result = irstring(CompleteStr("'This is a test'"));
+        assert_eq!(result.is_ok(), true);
     }
 }
