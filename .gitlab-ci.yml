@@ -2,6 +2,7 @@ image: "rust:latest"
 
 stages:
   - test
+  - benchmark
   - build
 
 variables:
@@ -18,6 +19,16 @@ cargo test:
   script:
     - rustc --version && cargo --version      # Print version info for debugging
     - cargo test --all --verbose
+
+cargo bench:
+  stage: benchmark
+  script:
+    - rustc --version && cargo --version
+    - cargo bench
+  artifacts:
+    name: benchmark_results
+    paths:
+      - target/criterion
 
 cargo build:
   stage: test
