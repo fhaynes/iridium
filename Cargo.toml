@@ -24,3 +24,10 @@ opt-level = 3
 
 [[bin]]
 name = "iridium"
+
+[dev-dependencies]
+criterion = "0.2"
+
+[[bench]]
+name = "iridium"
+harness = false
