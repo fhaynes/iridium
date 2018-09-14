@@ -1,5 +1,7 @@
 use std;
+use std::io::Cursor;
 
+use byteorder::{LittleEndian, ReadBytesExt};
 use chrono::prelude::*;
 use uuid::Uuid;
 
@@ -78,8 +80,9 @@ impl VM {
             println!("Header was incorrect");
             return self.events.clone();
         }
+
         // If the header is valid, we need to change the PC to be at bit 65.
-        self.pc = 64;
+        self.pc = 64 + self.get_starting_offset();
         let mut is_done = None;
         while is_done.is_none() {
             is_done = self.execute_instruction();
@@ -275,11 +278,18 @@ impl VM {
         for byte in PIE_HEADER_PREFIX.into_iter() {
             prepension.push(byte.clone());
         }
+
         while prepension.len() < PIE_HEADER_LENGTH {
             prepension.push(0);
         }
+
         prepension.append(&mut b);
         prepension
+    }
+
+    fn get_starting_offset(&self) -> usize {
+        let mut rdr = Cursor::new(&self.program[4..8]);
+        rdr.read_u32::<LittleEndian>().unwrap() as usize
     }
 
     /// Attempts to decode the byte the VM's program counter is pointing at into an opcode
