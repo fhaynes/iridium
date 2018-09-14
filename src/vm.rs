@@ -1,7 +1,7 @@
 use std;
 use std::io::Cursor;
 
-use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
+use byteorder::{LittleEndian, ReadBytesExt};
 use chrono::prelude::*;
 use uuid::Uuid;
 
@@ -289,7 +289,7 @@ impl VM {
 
     fn get_starting_offset(&self) -> usize {
         let mut rdr = Cursor::new(&self.program[4..8]);
-        rdr.read_u32::<BigEndian>().unwrap() as usize
+        rdr.read_u32::<LittleEndian>().unwrap() as usize
     }
 
     /// Attempts to decode the byte the VM's program counter is pointing at into an opcode

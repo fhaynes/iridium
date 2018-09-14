@@ -8,7 +8,7 @@ pub mod program_parsers;
 pub mod register_parsers;
 pub mod symbols;
 
-use byteorder::{ReadBytesExt, WriteBytesExt, BigEndian, LittleEndian};
+use byteorder::{LittleEndian, WriteBytesExt};
 use nom::types::CompleteStr;
 
 use assembler::assembler_errors::AssemblerError;
@@ -276,7 +276,7 @@ impl Assembler {
 
         // Now we need to calculate the starting offset so that the VM knows where the RO section ends
         let mut wtr: Vec<u8> = vec![];
-        wtr.write_u32::<BigEndian>(self.ro.len() as u32).unwrap();
+        wtr.write_u32::<LittleEndian>(self.ro.len() as u32).unwrap();
         header.append(&mut wtr);
 
         // Now pad the rest of the bytecode header
@@ -351,6 +351,8 @@ mod tests {
         let test_string = ".data\ntest1: .asciiz 'Hello'\n.code\nload $0 #100\nload $1 #1\nload $2 #0\ntest: inc $0\nneq $0 $2\njmpe @test\nhlt";
         let program = asm.assemble(test_string);
         assert_eq!(program.is_ok(), true);
+        let unwrapped = program.unwrap();
+        assert_eq!(unwrapped[4], 6);
     }
 
     #[test]
