@@ -5,6 +5,7 @@ extern crate chrono;
 extern crate env_logger;
 extern crate log;
 extern crate uuid;
+extern crate num_cpus;
 
 pub mod assembler;
 pub mod instruction;

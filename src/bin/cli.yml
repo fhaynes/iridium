@@ -7,3 +7,9 @@ args:
         help: Path to the .iasm or .ir file to run
         required: false
         index: 1
+    - THREADS:
+        help: Number of OS threads the VM will utilize
+        required: false
+        takes_value: true
+        long: threads
+        short: t

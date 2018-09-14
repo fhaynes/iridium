@@ -10,8 +10,9 @@ extern crate byteorder;
 extern crate chrono;
 extern crate env_logger;
 extern crate uuid;
-
+extern crate num_cpus;
 extern crate iridium;
+
 use clap::App;
 use iridium::assembler::Assembler;
 use iridium::repl::REPL;
@@ -22,12 +23,29 @@ fn main() {
     info!("Starting logging!");
     let yaml = load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml).get_matches();
+
+    let num_threads = match matches.value_of("THREADS") {
+        Some(number) => {
+            match number.parse::<usize>() {
+                Ok(v) => { v }
+                Err(_e) => {
+                    println!("Invalid argument for number of threads: {}. Using default.", number);
+                    num_cpus::get()
+                }
+            }
+        }
+        None => {
+            num_cpus::get()
+        }
+    };
+
     let target_file = matches.value_of("INPUT_FILE");
     match target_file {
         Some(filename) => {
             let program = read_file(filename);
             let mut asm = Assembler::new();
             let mut vm = VM::new();
+            vm.logical_cores = num_threads;
             let program = asm.assemble(&program);
             match program {
                 Ok(p) => {
