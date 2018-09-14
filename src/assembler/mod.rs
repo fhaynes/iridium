@@ -8,6 +8,7 @@ pub mod program_parsers;
 pub mod register_parsers;
 pub mod symbols;
 
+use byteorder::{LittleEndian, WriteBytesExt};
 use nom::types::CompleteStr;
 
 use assembler::assembler_errors::AssemblerError;
@@ -74,9 +75,6 @@ impl Assembler {
     pub fn assemble(&mut self, raw: &str) -> Result<Vec<u8>, Vec<AssemblerError>> {
         match program(CompleteStr(raw)) {
             Ok((_remainder, program)) => {
-                // First get the header so we can smush it into the bytecode letter
-                let mut assembled_program = self.write_pie_header();
-
                 // Start processing the AssembledInstructions
                 self.process_first_phase(&program);
                 if !self.errors.is_empty() {
@@ -94,6 +92,9 @@ impl Assembler {
                 }
                 // Run the second pass, which translates opcodes and associated operands into the bytecode
                 let mut body = self.process_second_phase(&program);
+
+                // Get the header so we can smush it into the bytecode letter
+                let mut assembled_program = self.write_pie_header();
 
                 // Merge the header with the populated body vector
                 assembled_program.append(&mut body);
@@ -272,9 +273,17 @@ impl Assembler {
         for byte in &PIE_HEADER_PREFIX {
             header.push(byte.clone());
         }
+
+        // Now we need to calculate the starting offset so that the VM knows where the RO section ends
+        let mut wtr: Vec<u8> = vec![];
+        wtr.write_u32::<LittleEndian>(self.ro.len() as u32).unwrap();
+        header.append(&mut wtr);
+
+        // Now pad the rest of the bytecode header
         while header.len() < PIE_HEADER_LENGTH {
             header.push(0 as u8);
         }
+
         header
     }
 }
@@ -333,6 +342,17 @@ mod tests {
         assert_eq!(program.len(), 92);
         vm.add_bytes(program);
         assert_eq!(vm.program.len(), 92);
+    }
+
+    #[test]
+    /// Simple test of data that goes into the read only section
+    fn test_code_start_offset_written() {
+        let mut asm = Assembler::new();
+        let test_string = ".data\ntest1: .asciiz 'Hello'\n.code\nload $0 #100\nload $1 #1\nload $2 #0\ntest: inc $0\nneq $0 $2\njmpe @test\nhlt";
+        let program = asm.assemble(test_string);
+        assert_eq!(program.is_ok(), true);
+        let unwrapped = program.unwrap();
+        assert_eq!(unwrapped[4], 6);
     }
 
     #[test]
