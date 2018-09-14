@@ -241,7 +241,7 @@ dependencies = [
 
 [[package]]
 name = "iridium"
-version = "0.0.19"
+version = "0.0.22"
 dependencies = [
  "byteorder 1.2.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -250,6 +250,7 @@ dependencies = [
  "env_logger 0.5.13 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "nom 4.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num_cpus 1.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "uuid 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
