@@ -2,9 +2,9 @@ use nom::alpha1;
 use nom::types::CompleteStr;
 
 use assembler::instruction_parsers::AssemblerInstruction;
-use assembler::Token;
 use assembler::label_parsers::label_declaration;
 use assembler::operand_parsers::operand;
+use assembler::Token;
 
 named!(directive_declaration<CompleteStr, Token>,
   do_parse!(
@@ -52,17 +52,22 @@ named!(pub directive<CompleteStr, AssemblerInstruction>,
 
 mod tests {
     #![allow(unused_imports)]
-    use nom::types::CompleteStr;
-    use super::{directive_declaration, directive_combined};
-    use assembler::{Token};
+    use super::{directive_combined, directive_declaration};
     use assembler::instruction_parsers::AssemblerInstruction;
+    use assembler::Token;
+    use nom::types::CompleteStr;
 
     #[test]
     fn test_parser_directive() {
         let result = directive_declaration(CompleteStr(".data"));
         assert_eq!(result.is_ok(), true);
         let (_, directive) = result.unwrap();
-        assert_eq!(directive, Token::Directive{name: "data".to_string() })
+        assert_eq!(
+            directive,
+            Token::Directive {
+                name: "data".to_string()
+            }
+        )
     }
 
     #[test]
@@ -72,20 +77,20 @@ mod tests {
         let (_, directive) = result.unwrap();
 
         // Yes, this is the what the result should be
-        let correct_instruction =
-            AssemblerInstruction {
-                opcode: None,
-                label: Some(
-                    Token::LabelDeclaration {
-                        name: "test".to_string()
-                    }),
-                directive: Some(
-                    Token::Directive {
-                        name: "asciiz".to_string()
-                    }),
-                operand1: Some(Token::IrString { name: "Hello".to_string() }),
-                operand2: None,
-                operand3: None };
+        let correct_instruction = AssemblerInstruction {
+            opcode: None,
+            label: Some(Token::LabelDeclaration {
+                name: "test".to_string(),
+            }),
+            directive: Some(Token::Directive {
+                name: "asciiz".to_string(),
+            }),
+            operand1: Some(Token::IrString {
+                name: "Hello".to_string(),
+            }),
+            operand2: None,
+            operand3: None,
+        };
 
         assert_eq!(directive, correct_instruction);
     }

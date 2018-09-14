@@ -26,7 +26,7 @@ pub enum Opcode {
     DEC,
     DJMPE,
     IGL,
-    PRTS
+    PRTS,
 }
 
 /// We implement this trait to make it easy to convert from a u8 to an Opcode
@@ -55,7 +55,7 @@ impl From<u8> for Opcode {
             19 => Opcode::DEC,
             20 => Opcode::DJMPE,
             21 => Opcode::PRTS,
-            _ => Opcode::IGL
+            _ => Opcode::IGL,
         }
     }
 }

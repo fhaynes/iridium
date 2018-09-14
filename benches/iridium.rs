@@ -3,8 +3,8 @@ extern crate criterion;
 extern crate iridium;
 
 use criterion::Criterion;
+use iridium::assembler::{PIE_HEADER_LENGTH, PIE_HEADER_PREFIX};
 use iridium::vm::VM;
-use iridium::assembler::{PIE_HEADER_PREFIX, PIE_HEADER_LENGTH};
 
 mod arithmetic {
     use super::*;
@@ -16,11 +16,7 @@ mod arithmetic {
             test_vm.run_once();
         };
 
-        c.bench_function(
-            "execute_add",
-            move |b| b.iter(|| clos
-            )
-        );
+        c.bench_function("execute_add", move |b| b.iter(|| clos));
     }
 
     fn execute_sub(c: &mut Criterion) {
@@ -30,11 +26,7 @@ mod arithmetic {
             test_vm.run_once();
         };
 
-        c.bench_function(
-            "execute_sub",
-            move |b| b.iter(|| clos
-            )
-        );
+        c.bench_function("execute_sub", move |b| b.iter(|| clos));
     }
 
     fn execute_mul(c: &mut Criterion) {
@@ -44,11 +36,7 @@ mod arithmetic {
             test_vm.run_once();
         };
 
-        c.bench_function(
-            "execute_mul",
-            move |b| b.iter(|| clos
-            )
-        );
+        c.bench_function("execute_mul", move |b| b.iter(|| clos));
     }
 
     fn execute_div(c: &mut Criterion) {
@@ -58,11 +46,7 @@ mod arithmetic {
             test_vm.run_once();
         };
 
-        c.bench_function(
-            "execute_div",
-            move |b| b.iter(|| clos
-            )
-        );
+        c.bench_function("execute_div", move |b| b.iter(|| clos));
     }
 
     criterion_group!{

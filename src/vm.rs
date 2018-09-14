@@ -3,21 +3,21 @@ use std;
 use chrono::prelude::*;
 use uuid::Uuid;
 
+use assembler::{PIE_HEADER_LENGTH, PIE_HEADER_PREFIX};
 use instruction::Opcode;
-use assembler::{PIE_HEADER_PREFIX, PIE_HEADER_LENGTH};
 
 #[derive(Clone, Debug)]
 pub enum VMEventType {
     Start,
-    GracefulStop{code: u32},
-    Crash{code: u32}
+    GracefulStop { code: u32 },
+    Crash { code: u32 },
 }
 
 #[derive(Clone, Debug)]
 pub struct VMEvent {
     event: VMEventType,
     at: DateTime<Utc>,
-    application_id: Uuid
+    application_id: Uuid,
 }
 
 pub const DEFAULT_HEAP_STARTING_SIZE: usize = 64;
@@ -41,7 +41,7 @@ pub struct VM {
     /// Is a unique, randomly generated UUID for identifying this VM
     id: Uuid,
     /// Keeps a list of events for a particular VM
-    events: Vec<VMEvent>
+    events: Vec<VMEvent>,
 }
 
 impl VM {
@@ -56,31 +56,25 @@ impl VM {
             remainder: 0,
             equal_flag: false,
             id: Uuid::new_v4(),
-            events: Vec::new()
+            events: Vec::new(),
         }
     }
 
     /// Wraps execution in a loop so it will continue to run until done or there is an error
     /// executing instructions.
     pub fn run(&mut self) -> Vec<VMEvent> {
-        self.events.push(
-            VMEvent{
-                event: VMEventType::Start,
-                at: Utc::now(),
-                application_id: self.id
-            }
-        );
+        self.events.push(VMEvent {
+            event: VMEventType::Start,
+            at: Utc::now(),
+            application_id: self.id,
+        });
         // TODO: Should setup custom errors here
         if !self.verify_header() {
-            self.events.push(
-                VMEvent{
-                    event: VMEventType::Crash{
-                        code: 1
-                    },
-                    at: Utc::now(),
-                    application_id: self.id
-                }
-            );
+            self.events.push(VMEvent {
+                event: VMEventType::Crash { code: 1 },
+                at: Utc::now(),
+                application_id: self.id,
+            });
             println!("Header was incorrect");
             return self.events.clone();
         }
@@ -90,14 +84,13 @@ impl VM {
         while is_done.is_none() {
             is_done = self.execute_instruction();
         }
-        self.events.push(
-            VMEvent{
-                event: VMEventType::GracefulStop{
-                    code: is_done.unwrap()},
-                    at: Utc::now(),
-                    application_id: self.id
-            }
-        );
+        self.events.push(VMEvent {
+            event: VMEventType::GracefulStop {
+                code: is_done.unwrap(),
+            },
+            at: Utc::now(),
+            application_id: self.id,
+        });
         self.events.clone()
     }
 
@@ -190,7 +183,7 @@ impl VM {
             Opcode::GTE => {
                 let register1 = self.registers[self.next_8_bits() as usize];
                 let register2 = self.registers[self.next_8_bits() as usize];
-                self.equal_flag = register1 >= register2;  
+                self.equal_flag = register1 >= register2;
                 self.next_8_bits();
             }
             Opcode::LT => {
@@ -260,8 +253,10 @@ impl VM {
                 }
                 let result = std::str::from_utf8(&slice[starting_offset..ending_offset]);
                 match result {
-                    Ok(s) => { print!("{}", s); }
-                    Err(e) => { println!("Error decoding string for prts instruction: {:#?}", e) }
+                    Ok(s) => {
+                        print!("{}", s);
+                    }
+                    Err(e) => println!("Error decoding string for prts instruction: {:#?}", e),
                 };
             }
         };

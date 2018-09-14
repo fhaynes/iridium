@@ -1,16 +1,15 @@
-use std::fmt;
 use std::error::Error;
+use std::fmt;
 
 #[derive(Debug, Clone)]
 pub enum AssemblerError {
-    NoSegmentDeclarationFound{ instruction: u32 },
-    StringConstantDeclaredWithoutLabel{ instruction: u32 },
+    NoSegmentDeclarationFound { instruction: u32 },
+    StringConstantDeclaredWithoutLabel { instruction: u32 },
     SymbolAlreadyDeclared,
-    UnknownDirectiveFound{ directive: String },
+    UnknownDirectiveFound { directive: String },
     NonOpcodeInOpcodeField,
     InsufficientSections,
-    ParseError{ error: String }
-
+    ParseError { error: String },
 }
 
 impl fmt::Display for AssemblerError {

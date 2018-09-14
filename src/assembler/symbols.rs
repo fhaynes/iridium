@@ -7,18 +7,18 @@ pub struct Symbol {
 
 impl Symbol {
     pub fn new(name: String, symbol_type: SymbolType) -> Symbol {
-        Symbol{
+        Symbol {
             name,
             symbol_type,
-            offset: None
+            offset: None,
         }
     }
 
     pub fn new_with_offset(name: String, symbol_type: SymbolType, offset: u32) -> Symbol {
-        Symbol{
+        Symbol {
             name,
             symbol_type,
-            offset: Some(offset)
+            offset: Some(offset),
         }
     }
 }
@@ -27,20 +27,18 @@ impl Symbol {
 pub enum SymbolType {
     Label,
     Integer,
-    IrString
+    IrString,
 }
 
 /// Holds all of the symbols
 #[derive(Debug, Clone, Default)]
 pub struct SymbolTable {
-    pub symbols: Vec<Symbol>
+    pub symbols: Vec<Symbol>,
 }
 
 impl SymbolTable {
     pub fn new() -> SymbolTable {
-        SymbolTable{
-            symbols: vec![]
-        }
+        SymbolTable { symbols: vec![] }
     }
 
     pub fn add_symbol(&mut self, s: Symbol) {

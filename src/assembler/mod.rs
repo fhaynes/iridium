@@ -1,20 +1,20 @@
+pub mod assembler_errors;
+pub mod directive_parsers;
 pub mod instruction_parsers;
+pub mod label_parsers;
 pub mod opcode_parsers;
 pub mod operand_parsers;
 pub mod program_parsers;
 pub mod register_parsers;
-pub mod label_parsers;
-pub mod directive_parsers;
-pub mod assembler_errors;
 pub mod symbols;
 
 use nom::types::CompleteStr;
 
-use instruction::Opcode;
-use assembler::program_parsers::{program, Program};
-use assembler::instruction_parsers::{AssemblerInstruction};
 use assembler::assembler_errors::AssemblerError;
+use assembler::instruction_parsers::AssemblerInstruction;
+use assembler::program_parsers::{program, Program};
 use assembler::symbols::{Symbol, SymbolTable, SymbolType};
+use instruction::Opcode;
 
 /// Magic number that begins every bytecode file prefix. These spell out EPIE in ASCII, if you were wondering.
 pub const PIE_HEADER_PREFIX: [u8; 4] = [45, 50, 49, 45];
@@ -31,9 +31,8 @@ pub enum Token {
     LabelDeclaration { name: String },
     LabelUsage { name: String },
     Directive { name: String },
-    IrString { name: String }
+    IrString { name: String },
 }
-
 
 #[derive(Debug, Default)]
 pub struct Assembler {
@@ -54,7 +53,7 @@ pub struct Assembler {
     /// The current instruction the assembler is converting to bytecode
     current_instruction: u32,
     /// Any errors we find along the way. At the end, we'll present them to the user.
-    errors: Vec<AssemblerError>
+    errors: Vec<AssemblerError>,
 }
 
 impl Assembler {
@@ -68,7 +67,7 @@ impl Assembler {
             errors: vec![],
             phase: AssemblerPhase::First,
             symbols: SymbolTable::new(),
-            current_section: None
+            current_section: None,
         }
     }
 
@@ -99,11 +98,13 @@ impl Assembler {
                 // Merge the header with the populated body vector
                 assembled_program.append(&mut body);
                 Ok(assembled_program)
-            },
+            }
             // If there were parsing errors, bad syntax, etc, this arm is run
             Err(e) => {
                 println!("There was an error parsing the code: {:?}", e);
-                Err(vec![AssemblerError::ParseError{ error: e.to_string() }])
+                Err(vec![AssemblerError::ParseError {
+                    error: e.to_string(),
+                }])
             }
         }
     }
@@ -119,7 +120,9 @@ impl Assembler {
                     self.process_label_declaration(&i);
                 } else {
                     // If we have *not* hit a segment header yet, then we have a label outside of a segment, which is not allowed
-                    self.errors.push(AssemblerError::NoSegmentDeclarationFound{instruction: self.current_instruction});
+                    self.errors.push(AssemblerError::NoSegmentDeclarationFound {
+                        instruction: self.current_instruction,
+                    });
                 }
             }
 
@@ -157,9 +160,12 @@ impl Assembler {
     fn process_label_declaration(&mut self, i: &AssemblerInstruction) {
         // Check if the label is None or String
         let name = match i.get_label_name() {
-            Some(name) => { name },
+            Some(name) => name,
             None => {
-                self.errors.push(AssemblerError::StringConstantDeclaredWithoutLabel{instruction: self.current_instruction});
+                self.errors
+                    .push(AssemblerError::StringConstantDeclaredWithoutLabel {
+                        instruction: self.current_instruction,
+                    });
                 return;
             }
         };
@@ -179,9 +185,7 @@ impl Assembler {
     fn process_directive(&mut self, i: &AssemblerInstruction) {
         // First let's make sure we have a parseable name
         let directive_name = match i.get_directive_name() {
-            Some(name) => {
-                name
-            },
+            Some(name) => name,
             None => {
                 println!("Directive has an invalid name: {:?}", i);
                 return;
@@ -196,7 +200,9 @@ impl Assembler {
                     self.handle_asciiz(i);
                 }
                 _ => {
-                    self.errors.push(AssemblerError::UnknownDirectiveFound{ directive: directive_name.clone() });
+                    self.errors.push(AssemblerError::UnknownDirectiveFound {
+                        directive: directive_name.clone(),
+                    });
                     return;
                 }
             }
@@ -209,13 +215,17 @@ impl Assembler {
     /// hello: .asciiz 'Hello!'
     fn handle_asciiz(&mut self, i: &AssemblerInstruction) {
         // Being a constant declaration, this is only meaningful in the first pass
-        if self.phase != AssemblerPhase::First { return; }
+        if self.phase != AssemblerPhase::First {
+            return;
+        }
 
         // In this case, operand1 will have the entire string we need to read in to RO memory
         match i.get_string_constant() {
             Some(s) => {
                 match i.get_label_name() {
-                    Some(name) => { self.symbols.set_symbol_offset(&name, self.ro_offset); }
+                    Some(name) => {
+                        self.symbols.set_symbol_offset(&name, self.ro_offset);
+                    }
                     None => {
                         // This would be someone typing:
                         // .asciiz 'Hello'
@@ -245,7 +255,10 @@ impl Assembler {
         let new_section: AssemblerSection = header_name.into();
         // Only specific section names are allowed
         if new_section == AssemblerSection::Unknown {
-            println!("Found an section header that is unknown: {:#?}", header_name);
+            println!(
+                "Found an section header that is unknown: {:#?}",
+                header_name
+            );
             return;
         }
         // TODO: Check if we really need to keep a list of all sections seen
@@ -269,7 +282,7 @@ impl Assembler {
 #[derive(Debug, PartialEq, Clone)]
 pub enum AssemblerPhase {
     First,
-    Second
+    Second,
 }
 
 impl Default for AssemblerPhase {
@@ -280,9 +293,9 @@ impl Default for AssemblerPhase {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum AssemblerSection {
-    Data{starting_instruction: Option<u32>},
-    Code{starting_instruction: Option<u32>},
-    Unknown
+    Data { starting_instruction: Option<u32> },
+    Code { starting_instruction: Option<u32> },
+    Unknown,
 }
 
 impl Default for AssemblerSection {
@@ -294,15 +307,13 @@ impl Default for AssemblerSection {
 impl<'a> From<&'a str> for AssemblerSection {
     fn from(name: &str) -> AssemblerSection {
         match name {
-            "data" => {
-                AssemblerSection::Data{starting_instruction: None}
-            }
-            "code" => {
-                AssemblerSection::Code{starting_instruction: None}
-            }
-            _ => {
-                AssemblerSection::Unknown
-            }
+            "data" => AssemblerSection::Data {
+                starting_instruction: None,
+            },
+            "code" => AssemblerSection::Code {
+                starting_instruction: None,
+            },
+            _ => AssemblerSection::Unknown,
         }
     }
 }

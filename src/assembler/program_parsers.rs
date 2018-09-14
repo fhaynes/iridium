@@ -1,7 +1,7 @@
 use nom::types::CompleteStr;
 
-use assembler::instruction_parsers::{instruction, AssemblerInstruction};
 use assembler::directive_parsers::directive;
+use assembler::instruction_parsers::{instruction, AssemblerInstruction};
 use assembler::SymbolTable;
 
 #[derive(Debug, PartialEq)]
