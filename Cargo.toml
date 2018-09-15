@@ -1,6 +1,6 @@
 [package]
 name = "iridium"
-version = "0.0.22"
+version = "0.0.23"
 authors = ["Fletcher Haynes <fletcher@subnetzero.io>"]
 description = "A high level, dynamic language written in Rust."
 license = "MIT"
@@ -16,6 +16,10 @@ byteorder = "1"
 uuid = { version = "0.7", features = ["v4"] }
 chrono = "0.4"
 num_cpus = "1.0"
+thrussh = "0.20.0"
+thrussh-keys = "0.9.5"
+futures = "0.1.24"
+tokio = "0.1.8"
 
 [profile.dev]
 opt-level = 0
