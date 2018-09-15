@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
+use std::sync::Arc;
 
 #[macro_use]
 extern crate clap;
@@ -11,6 +12,9 @@ extern crate chrono;
 extern crate env_logger;
 extern crate uuid;
 extern crate num_cpus;
+extern crate thrussh;
+extern crate thrussh_keys;
+
 extern crate iridium;
 
 use clap::App;
@@ -23,6 +27,19 @@ fn main() {
     info!("Starting logging!");
     let yaml = load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml).get_matches();
+
+    if matches.is_present("add-ssh-key") {
+        println!("User tried to add SSH key!");
+        std::process::exit(0);
+    }
+
+    if matches.is_present("ENABLE_SSH") {
+        println!("User wants to enable SSH!");
+        if matches.is_present("SSH_PORT") {
+            println!("They'd like to use port {:#?}", matches.value_of("ssh-port"));
+        }
+        start_ssh_server()
+    }
 
     let num_threads = match matches.value_of("THREADS") {
         Some(number) => {
@@ -90,4 +107,15 @@ fn read_file(tmp: &str) -> String {
             std::process::exit(1)
         }
     }
+}
+
+fn start_ssh_server() {
+    let _t = std::thread::spawn(|| {
+        let mut config = thrussh::server::Config::default();
+        config.connection_timeout = Some(std::time::Duration::from_secs(600));
+        config.auth_rejection_time = std::time::Duration::from_secs(3);
+        let config = Arc::new(config);
+        let sh = iridium::ssh::Server{};
+        thrussh::server::run(config, "0.0.0.0:2223", sh);
+    });
 }
