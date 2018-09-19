@@ -278,7 +278,7 @@ impl VM {
 
     pub fn prepend_header(mut b: Vec<u8>) -> Vec<u8> {
         let mut prepension = vec![];
-        for byte in PIE_HEADER_PREFIX.into_iter() {
+        for byte in &PIE_HEADER_PREFIX {
             prepension.push(byte.clone());
         }
 

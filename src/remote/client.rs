@@ -8,11 +8,10 @@ pub struct Client {
 
 impl Client {
     pub fn new(stream: BufReader<TcpStream>) -> Client {
-        Client { stream: stream }
+        Client { stream }
     }
 
     pub fn run(&mut self) {
-        println!("Starting run");
         let mut buf = String::new();
         loop {
             match self.stream.read_line(&mut buf) {

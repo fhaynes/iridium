@@ -29,7 +29,7 @@ fn main() {
         .value_of("DATA_ROOT_DIR")
         .unwrap_or("/var/lib/iridium/");
 
-    if !make_directory(data_root_dir).is_ok() {
+    if make_directory(data_root_dir).is_err() {
         println!("There was an error creating the default root data directory");
         std::process::exit(1);
     };
