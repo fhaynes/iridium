@@ -1,7 +1,6 @@
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
-use std::sync::Arc;
 
 #[macro_use]
 extern crate clap;
@@ -10,10 +9,8 @@ extern crate log;
 extern crate byteorder;
 extern crate chrono;
 extern crate env_logger;
-extern crate uuid;
 extern crate num_cpus;
-extern crate thrussh;
-extern crate thrussh_keys;
+extern crate uuid;
 
 extern crate iridium;
 
@@ -28,32 +25,33 @@ fn main() {
     let yaml = load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml).get_matches();
 
-    if matches.is_present("add-ssh-key") {
-        println!("User tried to add SSH key!");
-        std::process::exit(0);
-    }
+    let data_root_dir = matches
+        .value_of("DATA_ROOT_DIR")
+        .unwrap_or("/var/lib/iridium/");
 
-    if matches.is_present("ENABLE_SSH") {
-        println!("User wants to enable SSH!");
-        if matches.is_present("SSH_PORT") {
-            println!("They'd like to use port {:#?}", matches.value_of("ssh-port"));
-        }
-        start_ssh_server()
+    if !make_directory(data_root_dir).is_ok() {
+        println!("There was an error creating the default root data directory");
+        std::process::exit(1);
+    };
+
+    if matches.is_present("ENABLE_REMOTE_ACCESS") {
+        let port = matches.value_of("LISTEN_PORT").unwrap_or("2244");
+        let host = matches.value_of("LISTEN_HOST").unwrap_or("127.0.0.1");
+        start_remote_server(host.to_string(), port.to_string());
     }
 
     let num_threads = match matches.value_of("THREADS") {
-        Some(number) => {
-            match number.parse::<usize>() {
-                Ok(v) => { v }
-                Err(_e) => {
-                    println!("Invalid argument for number of threads: {}. Using default.", number);
-                    num_cpus::get()
-                }
+        Some(number) => match number.parse::<usize>() {
+            Ok(v) => v,
+            Err(_e) => {
+                println!(
+                    "Invalid argument for number of threads: {}. Using default.",
+                    number
+                );
+                num_cpus::get()
             }
-        }
-        None => {
-            num_cpus::get()
-        }
+        },
+        None => num_cpus::get(),
     };
 
     let target_file = matches.value_of("INPUT_FILE");
@@ -109,13 +107,14 @@ fn read_file(tmp: &str) -> String {
     }
 }
 
-fn start_ssh_server() {
-    let _t = std::thread::spawn(|| {
-        let mut config = thrussh::server::Config::default();
-        config.connection_timeout = Some(std::time::Duration::from_secs(600));
-        config.auth_rejection_time = std::time::Duration::from_secs(3);
-        let config = Arc::new(config);
-        let sh = iridium::ssh::Server{};
-        thrussh::server::run(config, "0.0.0.0:2223", sh);
+fn start_remote_server(listen_host: String, listen_port: String) {
+    let _t = std::thread::spawn(move || {
+        let mut sh = iridium::remote::server::Server::new(listen_host, listen_port);
+        sh.listen();
     });
+}
+
+fn make_directory(dir: &str) -> std::io::Result<()> {
+    std::fs::create_dir_all(dir)?;
+    Ok(())
 }

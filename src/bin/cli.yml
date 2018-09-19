@@ -1,5 +1,5 @@
 name: iridium
-version: "0.0.23"
+version: "0.0.24"
 author: Fletcher Haynes <fletcher@subnetzero.io>
 about: Interpreter for the Iridium language
 args:
@@ -13,27 +13,63 @@ args:
         takes_value: true
         long: threads
         short: t
-    - ENABLE_SSH:
-        help: Enables the SSH server component of Iridium VM
+    - ENABLE_REMOTE_ACCESS:
+        help: Enables the remote server component of Iridium VM
         required: false
         takes_value: false
-        long: enable-ssh
-    - SSH_PORT:
-        help: Which port Iridium should listen for SSH connections on
+        long: enable-remote-access
+        short: r
+    - LISTEN_PORT:
+        help: Which port Iridium should listen for remote connections on. Defaults to 2244.
         required: false
         takes_value: true
-        long: ssh-port
+        long: bind-port
         short: p
+    - LISTEN_HOST:
+        help: Which address Iridium should listen for remote connections on. Defaults to "127.0.0.1".
+        required: false
+        takes_value: true
+        long: bind-host
+        short: h
+    - DATA_ROOT_DIR:
+        help: Root directory where the Iridium VM should store its data. Defaults to /var/lib/iridium.
+        required: false
+        takes_value: true
+        long: data-root-dir
 subcommands:
-    # The name of this subcommand will be 'subcmd' which can be accessed in your
-    # Rust code later
     - add-ssh-key:
         about: Adds a public key to the list of keys authorized to access this VM remotely
-        version: "0.0.1"
+        version: "0.0.2"
         author: Fletcher Haynes <fletcher@subnetzero.io>
-        # Subcommand args are exactly like App args
         args:
-            - PUB_KEY_FILE:
-                help: Path to the file containing the public key
+            - PUB_KEY_USERNAME:
+                help: The username associated with this public key
                 index: 1
                 required: true
+            - PUB_KEY_FILE:
+                help: Path to the file containing the public key
+                index: 2
+                required: true
+    - remote:
+        about: Connects you to a remote Iridium VM
+        version: "0.0.1"
+        author: Fletcher Haynes <fletcher@subnetzero.io>
+        args:
+          - REMOTE_HOSTNAME:
+              help: The hostname of the remote host where the Iridium VM is running
+              takes_value: true
+              long: host
+              short: h
+              required: false
+          - REMOTE_PORT:
+              help: The port the remote Iridium VM is listening on
+              required: false
+              takes_value: true
+              long: port
+              short: p
+          - KEY_FILE:
+              help: The path to the key file you want to use to connect
+              required: true
+              takes_value: true
+              long: key
+              short: k
