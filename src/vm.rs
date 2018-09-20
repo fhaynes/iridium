@@ -45,6 +45,7 @@ pub struct VM {
     id: Uuid,
     /// Keeps a list of events for a particular VM
     events: Vec<VMEvent>,
+    /// Number of logical cores the system reports
     pub logical_cores: usize,
 }
 

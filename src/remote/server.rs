@@ -23,7 +23,7 @@ impl Server {
         for stream in listener.incoming() {
             let stream = stream.unwrap();
             thread::spawn(|| {
-                let mut client = Client::new(BufReader::new(stream));
+                let mut client = Client::new(stream);
                 client.run();
             });
         }

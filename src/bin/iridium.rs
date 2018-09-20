@@ -1,6 +1,10 @@
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
+use std::sync::mpsc;
+use std::sync::mpsc::{Sender, Receiver};
+use std::io::Read;
+use std::thread;
 
 #[macro_use]
 extern crate clap;
@@ -20,6 +24,8 @@ use iridium::repl::REPL;
 use iridium::vm::VM;
 
 fn main() {
+    let mut repl_receiver: Receiver<String>;
+
     env_logger::init();
     info!("Starting logging!");
     let yaml = load_yaml!("cli.yml");
@@ -77,14 +83,22 @@ fn main() {
             }
         }
         None => {
-            start_repl();
+            let mut repl = REPL::new();
+            let mut rx = repl.rx_pipe.take();
+            thread::spawn(move || {
+                let mut chan = rx.unwrap();
+                loop {
+                    match chan.recv() {
+                        Ok(msg) => {
+                            println!("{}", msg);
+                        },
+                        Err(e) => {},
+                    }
+                }
+            });
+            repl.run();
         }
     }
-}
-
-fn start_repl() {
-    let mut repl = REPL::new();
-    repl.run();
 }
 
 fn read_file(tmp: &str) -> String {
