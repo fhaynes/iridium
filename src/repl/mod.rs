@@ -4,9 +4,11 @@ use std;
 use std::fs::File;
 use std::io;
 use std::io::prelude::*;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::num::ParseIntError;
 use std::path::Path;
+use std::sync::mpsc::{Sender, Receiver};
+use std::sync::mpsc;
 
 use nom::types::CompleteStr;
 
@@ -18,29 +20,37 @@ use vm::VM;
 
 const COMMAND_PREFIX: char = '!';
 
+pub static REMOTE_BANNER: &'static str = "Welcome to Iridium! Let's be productive!";
+pub static PROMPT: &'static str = ">>> ";
+
 /// Core structure for the REPL for the Assembler
 pub struct REPL {
     command_buffer: Vec<String>,
     vm: VM,
     asm: Assembler,
     scheduler: Scheduler,
+    pub tx_pipe: Option<Box<Sender<String>>>,
+    pub rx_pipe: Option<Box<Receiver<String>>>
 }
 
 impl REPL {
     /// Creates and returns a new assembly REPL
     pub fn new() -> REPL {
+        let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
         REPL {
             vm: VM::new(),
             command_buffer: vec![],
             asm: Assembler::new(),
             scheduler: Scheduler::new(),
+            tx_pipe: Some(Box::new(tx)),
+            rx_pipe: Some(Box::new(rx))
         }
     }
 
     /// Run loop similar to the VM execution loop, but the instructions are taken from the user directly
     /// at the terminal and not from pre-compiled bytecode
     pub fn run(&mut self) {
-        println!("Welcome to Iridium! Let's be productive!");
+        self.send_message(format!("{}", REMOTE_BANNER));
         loop {
             // This allocates a new String in which to store whatever the user types each iteration.
             // TODO: Figure out how allocate this outside of the loop and re-use it every iteration
@@ -49,7 +59,7 @@ impl REPL {
             // Blocking call until the user types in a command
             let stdin = io::stdin();
 
-            // Annoyingly, `print!` does not automatically flush stdout like `println!` does, so we
+            // Annoyingly, `print!` does not automatically flush stdout like `self.send_message` does, so we
             // have to do that there for the user to see our `>>> ` prompt.
             print!(">>> ");
             io::stdout().flush().expect("Unable to flush stdout");
@@ -68,7 +78,8 @@ impl REPL {
                 let program = match program(CompleteStr(&buffer)) {
                     Ok((_remainder, program)) => program,
                     Err(e) => {
-                        println!("Unable to parse input: {:?}", e);
+                        self.send_message(format!("Unable to parse input: {:?}", e));
+                        self.send_prompt();
                         continue;
                     }
                 };
@@ -80,23 +91,76 @@ impl REPL {
         }
     }
 
+    pub fn run_single(&mut self, buffer: &str) -> Option<String> {
+        if buffer.starts_with(COMMAND_PREFIX) {
+            self.execute_command(&buffer);
+            return None;
+        } else {
+            let program = match program(CompleteStr(&buffer)) {
+                Ok((_remainder, program)) => {
+                    Some(program)
+                }
+                Err(e) => {
+                    self.send_message(format!("Unable to parse input: {:?}", e));
+                    self.send_prompt();
+                    None
+                }
+            };
+            match program {
+                Some(p) => {
+                    let mut bytes = p.to_bytes(&self.asm.symbols);
+                    self.vm.program.append(&mut bytes);
+                    self.vm.run_once();
+                    None
+                }
+                None => {
+                    None
+                }
+            }
+        }
+    }
+
+    pub fn send_message(&mut self, msg: String) {
+        match &self.tx_pipe {
+            Some(pipe) => {
+                pipe.send(msg+"\n");
+            },
+            None => {
+
+            }
+        }
+    }
+    pub fn send_prompt(&mut self) {
+        match &self.tx_pipe {
+            Some(pipe) => {
+                pipe.send(PROMPT.to_owned());
+            },
+            None => {
+
+            }
+        }
+    }
+
+    fn prompt(&mut self) -> String {
+        PROMPT.to_string()
+    }
+
     fn get_data_from_load(&mut self) -> Option<String> {
         let stdin = io::stdin();
-        print!("Please enter the path to the file you wish to load: ");
-        io::stdout().flush().expect("Unable to flush stdout");
+        self.send_message(format!("Please enter the path to the file you wish to load: "));
         let mut tmp = String::new();
 
         stdin
             .read_line(&mut tmp)
             .expect("Unable to read line from user");
-        println!("Attempting to load program from file...");
+        self.send_message(format!("Attempting to load program from file..."));
 
         let tmp = tmp.trim();
         let filename = Path::new(&tmp);
         let mut f = match File::open(&filename) {
             Ok(f) => f,
             Err(e) => {
-                println!("There was an error opening that file: {:?}", e);
+                self.send_message(format!("There was an error opening that file: {:?}", e));
                 return None;
             }
         };
@@ -104,7 +168,7 @@ impl REPL {
         match f.read_to_string(&mut contents) {
             Ok(_bytes_read) => Some(contents),
             Err(e) => {
-                println!("there was an error reading that file: {:?}", e);
+                self.send_message(format!("there was an error reading that file: {:?}", e));
                 None
             }
         }
@@ -142,27 +206,36 @@ impl REPL {
             "!symbols" => self.symbols(&args[1..]),
             "!load_file" => self.load_file(&args[1..]),
             "!spawn" => self.spawn(&args[1..]),
-            _ => println!("Invalid command!"),
+            _ => {
+                self.send_message(format!("Invalid command!"));
+                self.send_prompt();
+            },
         };
     }
 
     fn quit(&mut self, _args: &[&str]) {
-        println!("Farewell! Have a great day!");
+        self.send_message(format!("Farewell! Have a great day!"));
         std::process::exit(0);
     }
 
     fn history(&mut self, _args: &[&str]) {
+        let mut results = vec![];
         for command in &self.command_buffer {
-            println!("{}", command);
+            results.push(command.clone());
         }
+        self.send_message(format!("{:#?}", results));
+        self.send_prompt();
     }
 
     fn program(&mut self, _args: &[&str]) {
-        println!("Listing instructions currently in VM's program vector:");
+        self.send_message(format!("Listing instructions currently in VM's program vector:"));
+        let mut results = vec![];
         for instruction in &self.vm.program {
-            println!("{}", instruction);
+            results.push(instruction.clone())
         }
-        println!("End of Program Listing");
+        self.send_message(format!("{:#?}", results));
+        self.send_message(format!("End of Program Listing"));
+        self.send_prompt();
     }
 
     fn clear_program(&mut self, _args: &[&str]) {
@@ -170,23 +243,34 @@ impl REPL {
     }
 
     fn clear_registers(&mut self, _args: &[&str]) {
-        println!("Setting all registers to 0");
+        self.send_message(format!("Setting all registers to 0"));
         for i in 0..self.vm.registers.len() {
             self.vm.registers[i] = 0;
         }
-        println!("Done!");
+        self.send_message(format!("Done!"));
+        self.send_prompt();
     }
 
     fn registers(&mut self, _args: &[&str]) {
-        println!("Listing registers and all contents:");
-        println!("{:#?}", self.vm.registers);
-        println!("End of Register Listing")
+        self.send_message(format!("Listing registers and all contents:"));
+        let mut results = vec![];
+        for register in &self.vm.registers {
+            results.push(register.clone());
+        }
+        self.send_message(format!("{:#?}", results));
+        self.send_message(format!("End of Register Listing"));
+        self.send_prompt();
     }
 
     fn symbols(&mut self, _args: &[&str]) {
-        println!("Listing symbols table:");
-        println!("{:#?}", self.asm.symbols);
-        println!("End of Symbols Listing");
+        let mut results = vec![];
+        for symbol in &self.asm.symbols.symbols {
+            results.push(symbol.clone());
+        }
+        self.send_message(format!("Listing symbols table:"));
+        self.send_message(format!("{:#?}", results));
+        self.send_message(format!("End of Symbols Listing"));
+        self.send_prompt();
     }
 
     fn load_file(&mut self, _args: &[&str]) {
@@ -194,14 +278,14 @@ impl REPL {
         if let Some(contents) = contents {
             match self.asm.assemble(&contents) {
                 Ok(mut assembled_program) => {
-                    println!("Sending assembled program to VM");
+                    self.send_message(format!("Sending assembled program to VM"));
                     self.vm.program.append(&mut assembled_program);
-                    println!("{:#?}", self.vm.program);
                     self.vm.run();
                 }
                 Err(errors) => {
                     for error in errors {
-                        println!("Unable to parse input: {}", error);
+                        self.send_message(format!("Unable to parse input: {}", error));
+                        self.send_prompt();
                     }
                     return;
                 }
@@ -213,18 +297,18 @@ impl REPL {
 
     fn spawn(&mut self, _args: &[&str]) {
         let contents = self.get_data_from_load();
-        println!("Loaded contents: {:#?}", contents);
+        self.send_message(format!("Loaded contents: {:#?}", contents));
         if let Some(contents) = contents {
             match self.asm.assemble(&contents) {
                 Ok(mut assembled_program) => {
-                    println!("Sending assembled program to VM");
+                    self.send_message(format!("Sending assembled program to VM"));
                     self.vm.program.append(&mut assembled_program);
-                    println!("{:#?}", self.vm.program);
                     self.scheduler.get_thread(self.vm.clone());
                 }
                 Err(errors) => {
                     for error in errors {
-                        println!("Unable to parse input: {}", error);
+                        self.send_message(format!("Unable to parse input: {}", error));
+                        self.send_prompt();
                     }
                     return;
                 }
@@ -232,11 +316,5 @@ impl REPL {
         } else {
             return;
         }
-    }
-}
-
-impl Default for REPL {
-    fn default() -> Self {
-        Self::new()
     }
 }

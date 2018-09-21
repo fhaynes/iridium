@@ -45,6 +45,7 @@ pub struct VM {
     id: Uuid,
     /// Keeps a list of events for a particular VM
     events: Vec<VMEvent>,
+    /// Number of logical cores the system reports
     pub logical_cores: usize,
 }
 
@@ -278,7 +279,7 @@ impl VM {
 
     pub fn prepend_header(mut b: Vec<u8>) -> Vec<u8> {
         let mut prepension = vec![];
-        for byte in PIE_HEADER_PREFIX.into_iter() {
+        for byte in &PIE_HEADER_PREFIX {
             prepension.push(byte.clone());
         }
 

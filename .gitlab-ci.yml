@@ -11,7 +11,7 @@ variables:
 
 before_script:
   - apt-get update -yqq
-  - apt-get install -yqq --no-install-recommends build-essential
+  - apt-get install -yqq --no-install-recommends build-essential libsodium-dev
 
 # Use cargo to test the project
 cargo test:
