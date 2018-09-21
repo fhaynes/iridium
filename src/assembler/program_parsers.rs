@@ -24,7 +24,7 @@ named!(pub program<CompleteStr, Program>,
         instructions: many1!(alt!(instruction | directive)) >>
         (
             Program {
-                instructions: instructions
+                instructions
             }
         )
     )
