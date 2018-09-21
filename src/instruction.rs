@@ -27,6 +27,17 @@ pub enum Opcode {
     DJMPE,
     IGL,
     PRTS,
+    LOADF64,
+    ADDF64,
+    SUBF64,
+    MULF64,
+    DIVF64,
+    EQF64,
+    NEQF64,
+    GTF64,
+    GTEF64,
+    LTF64,
+    LTEF64
 }
 
 /// We implement this trait to make it easy to convert from a u8 to an Opcode
@@ -55,6 +66,17 @@ impl From<u8> for Opcode {
             19 => Opcode::DEC,
             20 => Opcode::DJMPE,
             21 => Opcode::PRTS,
+            22 => Opcode::LOADF64,
+            23 => Opcode::ADDF64,
+            24 => Opcode::SUBF64,
+            25 => Opcode::MULF64,
+            26 => Opcode::DIVF64,
+            27 => Opcode::EQF64,
+            28 => Opcode::NEQF64,
+            29 => Opcode::GTF64,
+            30 => Opcode::GTEF64,
+            31 => Opcode::LTF64,
+            32 => Opcode::LTEF64,
             _ => Opcode::IGL,
         }
     }
@@ -86,6 +108,17 @@ impl<'a> From<CompleteStr<'a>> for Opcode {
             CompleteStr("dec") => Opcode::DEC,
             CompleteStr("djmpe") => Opcode::DJMPE,
             CompleteStr("prts") => Opcode::PRTS,
+            CompleteStr("loadf64") => Opcode::LOADF64,
+            CompleteStr("addf64") => Opcode::ADDF64,
+            CompleteStr("subf64") => Opcode::SUBF64,
+            CompleteStr("mulf64") => Opcode::MULF64,
+            CompleteStr("divf64") => Opcode::DIVF64,
+            CompleteStr("eqf64") => Opcode::EQF64,
+            CompleteStr("neqf64") => Opcode::NEQF64,
+            CompleteStr("gtf64") => Opcode::GTF64,
+            CompleteStr("gtef64") => Opcode::GTEF64,
+            CompleteStr("ltf64") => Opcode::LTF64,
+            CompleteStr("ltef64") => Opcode::LTEF64,
             _ => Opcode::IGL,
         }
     }
