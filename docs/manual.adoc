@@ -42,9 +42,13 @@ This covers the internals of the Iridium VM. Number and type of registers, opcod
 === 2.1 Registers
 Iridium is a _register-based_ virtual machine. Details are:
 
-1. It has 32 registers capable of holding one i32 number
-2. Registers are numbered 0-31
-3. All registers are general-purpose registers
+==== i32 Registers
+. It has 32 registers capable of holding one i32 number
+. Registers are numbered 0-31
+
+==== f64 registers
+. It has 32 registers capable of holding one f64 number
+. Registers are numbered 0-31
 
 === 2.2 Program Counter
 The VM data structure has a Rust `usize` variable that tracks the current byte evaluated by the VM. This is the `pc`, or the `Program Counter`.
