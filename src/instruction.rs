@@ -63,7 +63,8 @@ impl From<u8> for Opcode {
 /// Convenience function to convert nom CompleteStr into an opcode
 impl<'a> From<CompleteStr<'a>> for Opcode {
     fn from(v: CompleteStr<'a>) -> Self {
-        match v {
+        let lowercased_opcode = v.to_lowercase();
+        match CompleteStr(&lowercased_opcode) {
             CompleteStr("load") => Opcode::LOAD,
             CompleteStr("add") => Opcode::ADD,
             CompleteStr("sub") => Opcode::SUB,
@@ -123,6 +124,8 @@ mod tests {
     #[test]
     fn test_str_to_opcode() {
         let opcode = Opcode::from(CompleteStr("load"));
+        assert_eq!(opcode, Opcode::LOAD);
+        let opcode = Opcode::from(CompleteStr("Load"));
         assert_eq!(opcode, Opcode::LOAD);
         let opcode = Opcode::from(CompleteStr("illegal"));
         assert_eq!(opcode, Opcode::IGL);
