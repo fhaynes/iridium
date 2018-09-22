@@ -1,10 +1,9 @@
-use nom::alpha1;
-use nom::types::CompleteStr;
-
 use assembler::instruction_parsers::AssemblerInstruction;
 use assembler::label_parsers::label_declaration;
 use assembler::operand_parsers::operand;
 use assembler::Token;
+use nom::alpha1;
+use nom::types::CompleteStr;
 
 named!(directive_declaration<CompleteStr, Token>,
   do_parse!(
@@ -52,10 +51,11 @@ named!(pub directive<CompleteStr, AssemblerInstruction>,
 
 mod tests {
     #![allow(unused_imports)]
-    use super::{directive_combined, directive_declaration};
+
     use assembler::instruction_parsers::AssemblerInstruction;
     use assembler::Token;
     use nom::types::CompleteStr;
+    use super::{directive_combined, directive_declaration};
 
     #[test]
     fn test_parser_directive() {
