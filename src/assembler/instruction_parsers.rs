@@ -3,6 +3,7 @@ use nom::types::CompleteStr;
 use assembler::label_parsers::label_declaration;
 use assembler::opcode_parsers::*;
 use assembler::operand_parsers::operand;
+use assembler::comment_parsers::comment;
 use assembler::{SymbolTable, Token};
 #[derive(Debug, PartialEq)]
 pub struct AssemblerInstruction {
@@ -119,11 +120,14 @@ impl AssemblerInstruction {
 
 named!(instruction_combined<CompleteStr, AssemblerInstruction>,
     do_parse!(
+        opt!(comment) >>
         l: opt!(label_declaration) >>
         o: opcode >>
+        opt!(comment) >>
         o1: opt!(operand) >>
         o2: opt!(operand) >>
         o3: opt!(operand) >>
+        opt!(comment) >>
         (
             AssemblerInstruction{
                 opcode: Some(o),
@@ -216,6 +220,44 @@ mod tests {
     #[test]
     fn test_parse_instruction_form_three() {
         let result = instruction_combined(CompleteStr("add $0 $1 $2\n"));
+        assert_eq!(
+            result,
+            Ok((
+                CompleteStr(""),
+                AssemblerInstruction {
+                    opcode: Some(Token::Op { code: Opcode::ADD }),
+                    label: None,
+                    directive: None,
+                    operand1: Some(Token::Register { reg_num: 0 }),
+                    operand2: Some(Token::Register { reg_num: 1 }),
+                    operand3: Some(Token::Register { reg_num: 2 }),
+                }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_parse_instruction_with_comment_one() {
+        let result = instruction_combined(CompleteStr("; this is a test\nadd $0 $1 $2\n"));
+        assert_eq!(
+            result,
+            Ok((
+                CompleteStr(""),
+                AssemblerInstruction {
+                    opcode: Some(Token::Op { code: Opcode::ADD }),
+                    label: None,
+                    directive: None,
+                    operand1: Some(Token::Register { reg_num: 0 }),
+                    operand2: Some(Token::Register { reg_num: 1 }),
+                    operand3: Some(Token::Register { reg_num: 2 }),
+                }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_parse_instruction_with_comment_two() {
+        let result = instruction_combined(CompleteStr("add $0 $1 $2 ; this is a test\n"));
         assert_eq!(
             result,
             Ok((
