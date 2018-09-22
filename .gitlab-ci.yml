@@ -15,6 +15,7 @@ before_script:
 
 # Use cargo to test the project
 cargo test:
+  allow_failure: true
   stage: test
   script:
     - rustc --version && cargo --version      # Print version info for debugging
