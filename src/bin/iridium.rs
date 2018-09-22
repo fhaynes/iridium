@@ -24,7 +24,7 @@ use iridium::repl::REPL;
 use iridium::vm::VM;
 
 fn main() {
-    let mut repl_receiver: Receiver<String>;
+    let mut _repl_receiver: Receiver<String>;
 
     env_logger::init();
     info!("Starting logging!");
@@ -92,7 +92,7 @@ fn main() {
                         Ok(msg) => {
                             println!("{}", msg);
                         },
-                        Err(e) => {},
+                        Err(_e) => {},
                     }
                 }
             });
