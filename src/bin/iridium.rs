@@ -1,8 +1,6 @@
 use std::fs::File;
-use std::io::prelude::*;
 use std::path::Path;
-use std::sync::mpsc;
-use std::sync::mpsc::{Sender, Receiver};
+use std::sync::mpsc::{Receiver};
 use std::io::Read;
 use std::thread;
 
@@ -86,7 +84,7 @@ fn main() {
             let mut repl = REPL::new();
             let mut rx = repl.rx_pipe.take();
             thread::spawn(move || {
-                let mut chan = rx.unwrap();
+                let chan = rx.unwrap();
                 loop {
                     match chan.recv() {
                         Ok(msg) => {

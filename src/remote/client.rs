@@ -1,4 +1,4 @@
-use std::io::{BufRead, Write, Read};
+use std::io::{BufRead, Write};
 use std::io::{BufReader, BufWriter};
 use std::net::TcpStream;
 use std::thread;
@@ -16,13 +16,13 @@ impl Client {
         // TODO: Handle this better
         let reader = stream.try_clone().unwrap();
         let writer = stream.try_clone().unwrap();
-        let mut repl = repl::REPL::new();
+        let repl = repl::REPL::new();
 
         Client {
             reader: BufReader::new(reader),
             writer: BufWriter::new(writer),
             raw_stream: stream,
-            repl: repl
+            repl
         }
     }
 
@@ -46,10 +46,6 @@ impl Client {
         }
     }
 
-    fn write_prompt(&mut self) {
-        self.w(repl::PROMPT);
-    }
-
     fn recv_loop(&mut self) {
         let rx = self.repl.rx_pipe.take();
         // TODO: Make this safer on unwrap
@@ -59,8 +55,16 @@ impl Client {
             loop {
                 match chan.recv() {
                     Ok(msg) => {
-                        writer.write_all(msg.as_bytes());
-                        writer.flush();
+                        match writer.write_all(msg.as_bytes()) {
+                            Ok(_) => {},
+                            Err(_e) => {
+
+                            }
+                        };
+                        match writer.flush() {
+                            Ok(_) => {},
+                            Err(_e) => {}
+                        }
                     },
                     Err(_e) => {}
                 }

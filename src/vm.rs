@@ -8,6 +8,7 @@ use uuid::Uuid;
 
 use assembler::{PIE_HEADER_LENGTH, PIE_HEADER_PREFIX};
 use instruction::Opcode;
+use std::f64::EPSILON;
 
 #[derive(Clone, Debug)]
 pub enum VMEventType {
@@ -298,13 +299,13 @@ impl VM {
             Opcode::EQF64 => {
                 let register1 = self.float_registers[self.next_8_bits() as usize];
                 let register2 = self.float_registers[self.next_8_bits() as usize];
-                self.equal_flag = register1 == register2;
+                self.equal_flag = (register1 - register2).abs() < EPSILON;
                 self.next_8_bits();
             }
             Opcode::NEQF64 => {
                 let register1 = self.float_registers[self.next_8_bits() as usize];
                 let register2 = self.float_registers[self.next_8_bits() as usize];
-                self.equal_flag = register1 != register2;
+                self.equal_flag = (register1 - register2).abs() > EPSILON;
                 self.next_8_bits();
             }
             Opcode::GTF64 => {

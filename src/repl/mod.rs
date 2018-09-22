@@ -3,7 +3,6 @@ pub mod command_parser;
 use std;
 use std::fs::File;
 use std::io;
-use std::io::prelude::*;
 use std::io::{Read, Write};
 use std::num::ParseIntError;
 use std::path::Path;
@@ -24,6 +23,7 @@ pub static REMOTE_BANNER: &'static str = "Welcome to Iridium! Let's be productiv
 pub static PROMPT: &'static str = ">>> ";
 
 /// Core structure for the REPL for the Assembler
+#[derive(Default)]
 pub struct REPL {
     command_buffer: Vec<String>,
     vm: VM,
@@ -50,7 +50,7 @@ impl REPL {
     /// Run loop similar to the VM execution loop, but the instructions are taken from the user directly
     /// at the terminal and not from pre-compiled bytecode
     pub fn run(&mut self) {
-        self.send_message(format!("{}", REMOTE_BANNER));
+        self.send_message(REMOTE_BANNER.to_string());
         loop {
             // This allocates a new String in which to store whatever the user types each iteration.
             // TODO: Figure out how allocate this outside of the loop and re-use it every iteration
@@ -77,8 +77,8 @@ impl REPL {
             } else {
                 let program = match program(CompleteStr(&buffer)) {
                     Ok((_remainder, program)) => program,
-                    Err(e) => {
-                        self.send_message(format!("Unable to parse input: {:?}", e));
+                    Err(_e) => {
+                        self.send_message(REMOTE_BANNER.to_string());
                         self.send_prompt();
                         continue;
                     }
@@ -94,7 +94,7 @@ impl REPL {
     pub fn run_single(&mut self, buffer: &str) -> Option<String> {
         if buffer.starts_with(COMMAND_PREFIX) {
             self.execute_command(&buffer);
-            return None;
+            None
         } else {
             let program = match program(CompleteStr(&buffer)) {
                 Ok((_remainder, program)) => {
@@ -123,7 +123,10 @@ impl REPL {
     pub fn send_message(&mut self, msg: String) {
         match &self.tx_pipe {
             Some(pipe) => {
-                pipe.send(msg+"\n");
+                match pipe.send(msg+"\n") {
+                    Ok(_) => {},
+                    Err(_e) => {}
+                };
             },
             None => {
 
@@ -133,7 +136,10 @@ impl REPL {
     pub fn send_prompt(&mut self) {
         match &self.tx_pipe {
             Some(pipe) => {
-                pipe.send(PROMPT.to_owned());
+                match pipe.send(PROMPT.to_owned()) {
+                    Ok(_) => {},
+                    Err(_e) => {}
+                }
             },
             None => {
 
@@ -141,19 +147,15 @@ impl REPL {
         }
     }
 
-    fn prompt(&mut self) -> String {
-        PROMPT.to_string()
-    }
-
     fn get_data_from_load(&mut self) -> Option<String> {
         let stdin = io::stdin();
-        self.send_message(format!("Please enter the path to the file you wish to load: "));
+        self.send_message("Please enter the path to the file you wish to load: ".to_string());
         let mut tmp = String::new();
 
         stdin
             .read_line(&mut tmp)
             .expect("Unable to read line from user");
-        self.send_message(format!("Attempting to load program from file..."));
+        self.send_message("Attempting to load program from file...".to_string());
 
         let tmp = tmp.trim();
         let filename = Path::new(&tmp);
@@ -207,14 +209,14 @@ impl REPL {
             "!load_file" => self.load_file(&args[1..]),
             "!spawn" => self.spawn(&args[1..]),
             _ => {
-                self.send_message(format!("Invalid command!"));
+                self.send_message("Invalid command!".to_string());
                 self.send_prompt();
             },
         };
     }
 
     fn quit(&mut self, _args: &[&str]) {
-        self.send_message(format!("Farewell! Have a great day!"));
+        self.send_message("Farewell! Have a great day!".to_string());
         std::process::exit(0);
     }
 
@@ -228,13 +230,13 @@ impl REPL {
     }
 
     fn program(&mut self, _args: &[&str]) {
-        self.send_message(format!("Listing instructions currently in VM's program vector:"));
+        self.send_message("Listing instructions currently in VM's program vector: ".to_string());
         let mut results = vec![];
         for instruction in &self.vm.program {
             results.push(instruction.clone())
         }
         self.send_message(format!("{:#?}", results));
-        self.send_message(format!("End of Program Listing"));
+        self.send_message("End of Program Listing".to_string());
         self.send_prompt();
     }
 
@@ -243,22 +245,22 @@ impl REPL {
     }
 
     fn clear_registers(&mut self, _args: &[&str]) {
-        self.send_message(format!("Setting all registers to 0"));
+        self.send_message("Setting all registers to 0".to_string());
         for i in 0..self.vm.registers.len() {
             self.vm.registers[i] = 0;
         }
-        self.send_message(format!("Done!"));
+        self.send_message("Done!".to_string());
         self.send_prompt();
     }
 
     fn registers(&mut self, _args: &[&str]) {
-        self.send_message(format!("Listing registers and all contents:"));
+        self.send_message("Listing registers and all contents:".to_string());
         let mut results = vec![];
         for register in &self.vm.registers {
             results.push(register.clone());
         }
         self.send_message(format!("{:#?}", results));
-        self.send_message(format!("End of Register Listing"));
+        self.send_message("End of Register Listing".to_string());
         self.send_prompt();
     }
 
@@ -267,9 +269,9 @@ impl REPL {
         for symbol in &self.asm.symbols.symbols {
             results.push(symbol.clone());
         }
-        self.send_message(format!("Listing symbols table:"));
+        self.send_message("Listing symbols table:".to_string());
         self.send_message(format!("{:#?}", results));
-        self.send_message(format!("End of Symbols Listing"));
+        self.send_message("End of Symbols Listing".to_string());
         self.send_prompt();
     }
 
@@ -278,7 +280,7 @@ impl REPL {
         if let Some(contents) = contents {
             match self.asm.assemble(&contents) {
                 Ok(mut assembled_program) => {
-                    self.send_message(format!("Sending assembled program to VM"));
+                    self.send_message("Sending assembled program to VM".to_string());
                     self.vm.program.append(&mut assembled_program);
                     self.vm.run();
                 }
@@ -301,7 +303,7 @@ impl REPL {
         if let Some(contents) = contents {
             match self.asm.assemble(&contents) {
                 Ok(mut assembled_program) => {
-                    self.send_message(format!("Sending assembled program to VM"));
+                    self.send_message("Sending assembled program to VM".to_string());
                     self.vm.program.append(&mut assembled_program);
                     self.scheduler.get_thread(self.vm.clone());
                 }
