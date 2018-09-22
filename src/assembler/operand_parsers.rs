@@ -19,6 +19,23 @@ named!(integer_operand<CompleteStr, Token>,
     )
 );
 
+named!(float_operand<CompleteStr, Token>,
+    ws!(
+        do_parse!(
+            tag!("#") >>
+            reg_num: digit >>
+            tag!(".") >>
+            post_num: digit >>
+            (
+                {
+
+                    Token::FloatOperand{value: (reg_num.to_string() + "." + &post_num).parse::<f64>().unwrap()}
+                }
+            )
+        )
+    )
+);
+
 named!(irstring<CompleteStr, Token>,
     do_parse!(
         tag!("'") >>
@@ -33,6 +50,7 @@ named!(irstring<CompleteStr, Token>,
 named!(pub operand<CompleteStr, Token>,
     alt!(
         integer_operand |
+        float_operand |
         label_usage |
         register |
         irstring
@@ -41,7 +59,7 @@ named!(pub operand<CompleteStr, Token>,
 
 mod tests {
     #![allow(unused_imports)]
-    use super::{integer_operand, irstring};
+    use super::{integer_operand, irstring, float_operand};
     use assembler::Token;
     use nom::types::CompleteStr;
 
@@ -61,5 +79,13 @@ mod tests {
     fn test_parse_string_operand() {
         let result = irstring(CompleteStr("'This is a test'"));
         assert_eq!(result.is_ok(), true);
+    }
+
+    #[test]
+    fn test_parse_float_operand() {
+        let result = float_operand(CompleteStr("#100.3"));
+        assert_eq!(result.is_ok(), true);
+        let (_, value) = result.unwrap();
+        assert_eq!(value, Token::FloatOperand{value: 100.3});
     }
 }

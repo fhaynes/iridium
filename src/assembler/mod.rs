@@ -29,6 +29,7 @@ pub enum Token {
     Op { code: Opcode },
     Register { reg_num: u8 },
     IntegerOperand { value: i32 },
+    FloatOperand { value: f64 },
     LabelDeclaration { name: String },
     LabelUsage { name: String },
     Directive { name: String },

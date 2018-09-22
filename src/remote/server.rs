@@ -1,5 +1,4 @@
 use remote::client::Client;
-use std::io::BufReader;
 use std::net::TcpListener;
 use std::thread;
 

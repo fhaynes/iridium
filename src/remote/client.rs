@@ -1,8 +1,6 @@
 use std::io::{BufRead, Write, Read};
 use std::io::{BufReader, BufWriter};
 use std::net::TcpStream;
-use std::sync::mpsc::{Sender, Receiver};
-use std::sync::{mpsc};
 use std::thread;
 use repl;
 
