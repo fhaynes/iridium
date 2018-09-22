@@ -1,0 +1,40 @@
+= Iridium VM Roadmap
+:toc:
+:author: Fletcher Haynes
+:email: fletcher@subnetzero.io
+
+== 1.0 Introduction
+Hello! This document contains the roadmap for the Iridium project. It is high level and does not discuss implementation details.
+
+== 2.0 Milestones and Versioning
+Iridium uses semantic versioning.
+
+== 3.0 Milestones
+Until we reach version 0.1.0, one tutorial is tied to one patch version. For example, tutorial #16 corresponds to 0.0.16. Each of these are tagged in GitLab. Once the tutorials are finished, we will go to 0.1.0 and follow semver.
+
+This section details the milestones starting from `0.1.0`.
+
+=== 0.1.0 Milestone
+
+. Encrypted remote access
+. Authentication for remote access
+. Authorization for remote access
+. Thread pool to execute multiple applications at a time
+
+=== 0.2.0 Milestone
+
+. Multi-VM clustering over the network
+. Built-in key-value store similar to Erlang's ETS
+. Replication for the KV store
+. Supervisor trees
+. Green threads similar to goroutines and Erlang processes
+
+=== 0.3.0 Milestone
+
+. Hot code swap
+. Built-in HTTP server
+.
+
+=== 0.4.0 Milestone
+
+. Bootable as a unikernel in a VM
