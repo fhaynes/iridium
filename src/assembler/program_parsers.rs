@@ -1,8 +1,7 @@
-use nom::types::CompleteStr;
-
 use assembler::directive_parsers::directive;
-use assembler::instruction_parsers::{instruction, AssemblerInstruction};
+use assembler::instruction_parsers::{AssemblerInstruction, instruction};
 use assembler::SymbolTable;
+use nom::types::CompleteStr;
 
 #[derive(Debug, PartialEq)]
 pub struct Program {

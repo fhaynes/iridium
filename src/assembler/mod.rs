@@ -6,6 +6,7 @@ pub mod opcode_parsers;
 pub mod operand_parsers;
 pub mod program_parsers;
 pub mod register_parsers;
+pub mod comment_parsers;
 pub mod symbols;
 
 use byteorder::{LittleEndian, WriteBytesExt};
@@ -34,6 +35,7 @@ pub enum Token {
     LabelUsage { name: String },
     Directive { name: String },
     IrString { name: String },
+    Comment,
 }
 
 #[derive(Debug, Default)]

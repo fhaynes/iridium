@@ -1,5 +1,5 @@
 use std::thread;
-use vm::{VMEvent, VM};
+use vm::{VM, VMEvent};
 
 #[derive(Default)]
 pub struct Scheduler {
@@ -46,6 +46,7 @@ impl Scheduler {
 mod tests {
     #[allow(unused_imports)]
     use scheduler::Scheduler;
+
     #[test]
     fn test_make_scheduler() {
         let s = Scheduler::new();

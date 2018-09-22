@@ -1,8 +1,8 @@
-#[macro_use]
-extern crate nom;
 extern crate byteorder;
 extern crate chrono;
 extern crate log;
+#[macro_use]
+extern crate nom;
 extern crate num_cpus;
 extern crate uuid;
 
