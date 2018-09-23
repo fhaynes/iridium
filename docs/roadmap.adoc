@@ -7,7 +7,7 @@
 Hello! This document contains the roadmap for the Iridium project. It is high level and does not discuss implementation details.
 
 == 2.0 Milestones and Versioning
-Iridium uses semantic versioning.
+Iridium uses semantic versioning. Mostly. It was originally a learning project, and tutorials are still being written as development progresses. We use the patch number to indicate which tutorial goes with which release.
 
 == 3.0 Milestones
 Until we reach version 0.1.0, one tutorial is tied to one patch version. For example, tutorial #16 corresponds to 0.0.16. Each of these are tagged in GitLab. Once the tutorials are finished, we will go to 0.1.0 and follow semver.
@@ -20,6 +20,7 @@ This section details the milestones starting from `0.1.0`.
 . Authentication for remote access
 . Authorization for remote access
 . Thread pool to execute multiple applications at a time
+. Reference-counting GC
 
 === 0.2.0 Milestone
 
