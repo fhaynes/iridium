@@ -539,7 +539,7 @@ mod tests {
     }
 
     #[test]
-    fn test_gt_opcode() {
+    fn test_lte_opcode() {
         let mut test_vm = VM::get_test_vm();
         test_vm.registers[0] = 20;
         test_vm.registers[1] = 10;
@@ -555,7 +555,7 @@ mod tests {
     }
 
     #[test]
-    fn test_lte_opcode() {
+    fn test_lt_opcode() {
         let mut test_vm = VM::get_test_vm();
         test_vm.registers[0] = 20;
         test_vm.registers[1] = 10;
@@ -571,7 +571,7 @@ mod tests {
     }
 
     #[test]
-    fn test_lt_opcode() {
+    fn test_gt_opcode() {
         let mut test_vm = VM::get_test_vm();
         test_vm.registers[0] = 20;
         test_vm.registers[1] = 10;
