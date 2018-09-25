@@ -339,6 +339,7 @@ impl VM {
                     other => { other }
                 };
                 self.registers[reg_num] = self.registers[reg_num].wrapping_shl(num_bits.into());
+                self.next_8_bits();
             }
             Opcode::SHR => {
                 let reg_num = self.next_8_bits() as usize;
@@ -347,6 +348,7 @@ impl VM {
                     other => { other }
                 };
                 self.registers[reg_num] = self.registers[reg_num].wrapping_shr(num_bits.into());
+                self.next_8_bits();
             }
         };
         None
