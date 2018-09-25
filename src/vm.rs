@@ -365,11 +365,14 @@ impl VM {
                 let register2 = self.registers[self.next_8_bits() as usize];
                 self.registers[self.next_8_bits() as usize] = register1 ^ register2;
             }
+<<<<<<< HEAD
             Opcode::NOT => {
                 let register1 = self.registers[self.next_8_bits() as usize];
                 self.registers[self.next_8_bits() as usize] = !register1;
                 self.next_8_bits();
             }
+=======
+>>>>>>> c98d6838f612ca72e3021f0df1a3c713bddbd0f6
         };
         None
     }
