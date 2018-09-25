@@ -37,7 +37,9 @@ pub enum Opcode {
     GTF64,
     GTEF64,
     LTF64,
-    LTEF64
+    LTEF64,
+    SHL,
+    SHR,
 }
 
 /// We implement this trait to make it easy to convert from a u8 to an Opcode
@@ -77,6 +79,8 @@ impl From<u8> for Opcode {
             30 => Opcode::GTEF64,
             31 => Opcode::LTF64,
             32 => Opcode::LTEF64,
+            33 => Opcode::SHL,
+            34 => Opcode::SHR,
             _ => Opcode::IGL,
         }
     }
@@ -120,6 +124,8 @@ impl<'a> From<CompleteStr<'a>> for Opcode {
             CompleteStr("gtef64") => Opcode::GTEF64,
             CompleteStr("ltf64") => Opcode::LTF64,
             CompleteStr("ltef64") => Opcode::LTEF64,
+            CompleteStr("shl") => Opcode::SHL,
+            CompleteStr("shr") => Opcode::SHR,
             _ => Opcode::IGL,
         }
     }

@@ -70,7 +70,6 @@ mod tests {
         let (rest, value) = result.unwrap();
         assert_eq!(rest, CompleteStr(""));
         assert_eq!(value, Token::IntegerOperand { value: 10 });
-
         let result = integer_operand(CompleteStr("10"));
         assert_eq!(result.is_ok(), false);
     }
@@ -83,9 +82,8 @@ mod tests {
 
     #[test]
     fn test_parse_float_operand() {
-        let result = float_operand(CompleteStr("#100.3"));
-        assert_eq!(result.is_ok(), true);
-        let (_, value) = result.unwrap();
-        assert_eq!(value, Token::FloatOperand{value: 100.3});
+        vec!["#100.3", "#-100.3", "#1.0", "0.0"].iter().map(|i| {
+            assert_eq!(float_operand(CompleteStr(i)).is_ok(), true);
+        });
     }
 }

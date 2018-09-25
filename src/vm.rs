@@ -332,6 +332,22 @@ impl VM {
                 self.equal_flag = register1 <= register2;
                 self.next_8_bits();
             }
+            Opcode::SHL => {
+                let reg_num = self.next_8_bits() as usize;
+                let num_bits = match self.next_8_bits() {
+                    0 => { 16 },
+                    other => { other }
+                };
+                self.registers[reg_num] = self.registers[reg_num].wrapping_shl(num_bits.into());
+            }
+            Opcode::SHR => {
+                let reg_num = self.next_8_bits() as usize;
+                let num_bits = match self.next_8_bits() {
+                    0 => { 16 },
+                    other => { other }
+                };
+                self.registers[reg_num] = self.registers[reg_num].wrapping_shr(num_bits.into());
+            }
         };
         None
     }
@@ -747,5 +763,23 @@ mod tests {
         test_vm.float_registers[0] = 5.0;
         test_vm.run_once();
         assert_eq!(test_vm.equal_flag, true);
+    }
+
+    #[test]
+    fn test_shl_opcode() {
+        let mut test_vm = VM::get_test_vm();
+        test_vm.program = vec![33, 0, 0, 0];
+        assert_eq!(5, test_vm.registers[0]);
+        test_vm.run_once();
+        assert_eq!(327680, test_vm.registers[0]);
+    }
+
+    #[test]
+    fn test_shr_opcode() {
+        let mut test_vm = VM::get_test_vm();
+        test_vm.program = vec![34, 0, 0, 0];
+        assert_eq!(5, test_vm.registers[0]);
+        test_vm.run_once();
+        assert_eq!(0, test_vm.registers[0]);
     }
 }
