@@ -43,6 +43,7 @@ pub enum Opcode {
     AND,
     OR,
     XOR,
+    NOT,
 }
 
 /// We implement this trait to make it easy to convert from a u8 to an Opcode
@@ -87,6 +88,7 @@ impl From<u8> for Opcode {
             35 => Opcode::AND,
             36 => Opcode::OR,
             37 => Opcode::XOR,
+            38 => Opcode::NOT,
             _ => Opcode::IGL,
         }
     }
@@ -135,6 +137,7 @@ impl<'a> From<CompleteStr<'a>> for Opcode {
             CompleteStr("and") => Opcode::AND,
             CompleteStr("or") => Opcode::OR,
             CompleteStr("xor") => Opcode::XOR,
+            CompleteStr("not") => Opcode::NOT,
             _ => Opcode::IGL,
         }
     }

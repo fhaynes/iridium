@@ -29,7 +29,7 @@ pub const DEFAULT_HEAP_STARTING_SIZE: usize = 64;
 #[derive(Default, Clone)]
 pub struct VM {
     /// Array that simulates having hardware registers
-    pub registers: [i32; 32],
+    pub registers: [i64; 32],
     /// Array that simulates having floating point hardware registers
     pub float_registers: [f64; 32],
     /// Program counter that tracks which byte is being executed
@@ -130,7 +130,7 @@ impl VM {
             Opcode::LOAD => {
                 let register = self.next_8_bits() as usize;
                 let number = u32::from(self.next_16_bits());
-                self.registers[register] = number as i32;
+                self.registers[register] = number as i64;
             }
             Opcode::ADD => {
                 let register1 = self.registers[self.next_8_bits() as usize];
@@ -226,7 +226,7 @@ impl VM {
             Opcode::ALOC => {
                 let register = self.next_8_bits() as usize;
                 let bytes = self.registers[register];
-                let new_end = self.heap.len() as i32 + bytes;
+                let new_end = self.heap.len() as i64 + bytes;
                 self.heap.resize(new_end as usize, 0);
             }
             Opcode::INC => {
@@ -364,6 +364,11 @@ impl VM {
                 let register1 = self.registers[self.next_8_bits() as usize];
                 let register2 = self.registers[self.next_8_bits() as usize];
                 self.registers[self.next_8_bits() as usize] = register1 ^ register2;
+            }
+            Opcode::NOT => {
+                let register1 = self.registers[self.next_8_bits() as usize];
+                self.registers[self.next_8_bits() as usize] = !register1;
+                self.next_8_bits();
             }
         };
         None
@@ -834,5 +839,13 @@ mod tests {
         test_vm.registers[1] = 5;
         test_vm.run_once();
         assert_eq!(test_vm.registers[2], 0);
+    }
+
+    #[test]
+    fn test_not_opcode() {
+        let mut test_vm = VM::get_test_vm();
+        test_vm.program = vec![38, 0, 1, 2];
+        test_vm.run_once();
+        assert_eq!(test_vm.registers[1], -6);
     }
 }
