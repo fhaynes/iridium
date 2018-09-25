@@ -350,6 +350,11 @@ impl VM {
                 self.registers[reg_num] = self.registers[reg_num].wrapping_shr(num_bits.into());
                 self.next_8_bits();
             }
+            Opcode::AND => {
+                let register1 = self.registers[self.next_8_bits() as usize];
+                let register2 = self.registers[self.next_8_bits() as usize];
+                self.registers[self.next_8_bits() as usize] = register1 & register2;
+            }
         };
         None
     }
@@ -783,5 +788,17 @@ mod tests {
         assert_eq!(5, test_vm.registers[0]);
         test_vm.run_once();
         assert_eq!(0, test_vm.registers[0]);
+    }
+
+    #[test]
+    fn test_and_opcode() {
+        let mut test_vm = VM::get_test_vm();
+        test_vm.program = vec![35, 0, 1, 2, 35, 0, 1, 2];
+        test_vm.run_once();
+        assert_eq!(test_vm.registers[2], 0);
+        test_vm.registers[0] = 5;
+        test_vm.registers[1] = 5;
+        test_vm.run_once();
+        assert_eq!(test_vm.registers[2], 5);
     }
 }
