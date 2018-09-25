@@ -41,6 +41,8 @@ pub enum Opcode {
     SHL,
     SHR,
     AND,
+    OR,
+    XOR,
 }
 
 /// We implement this trait to make it easy to convert from a u8 to an Opcode
@@ -83,6 +85,8 @@ impl From<u8> for Opcode {
             33 => Opcode::SHL,
             34 => Opcode::SHR,
             35 => Opcode::AND,
+            36 => Opcode::OR,
+            37 => Opcode::XOR,
             _ => Opcode::IGL,
         }
     }
@@ -129,6 +133,8 @@ impl<'a> From<CompleteStr<'a>> for Opcode {
             CompleteStr("shl") => Opcode::SHL,
             CompleteStr("shr") => Opcode::SHR,
             CompleteStr("and") => Opcode::AND,
+            CompleteStr("or") => Opcode::OR,
+            CompleteStr("xor") => Opcode::XOR,
             _ => Opcode::IGL,
         }
     }
