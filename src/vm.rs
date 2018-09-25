@@ -370,6 +370,11 @@ impl VM {
                 self.registers[self.next_8_bits() as usize] = !register1;
                 self.next_8_bits();
             }
+            Opcode::LUI => {
+                let register1 = self.registers[self.next_8_bits() as usize];
+                self.registers[self.next_8_bits() as usize] = !register1;
+                self.next_8_bits();
+            }
         };
         None
     }
