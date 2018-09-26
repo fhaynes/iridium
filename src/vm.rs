@@ -372,7 +372,6 @@ impl VM {
                 self.next_8_bits();
             }
             Opcode::LUI => {
-                // TODO: This could definitely be cleaned up
                 let test: i32 = -50000;
                 let register = self.next_8_bits() as usize;
                 let value = self.registers[register];
