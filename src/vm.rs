@@ -129,8 +129,9 @@ impl VM {
         match self.decode_opcode() {
             Opcode::LOAD => {
                 let register = self.next_8_bits() as usize;
-                let number = u32::from(self.next_16_bits());
-                self.registers[register] = number as i32;
+                let number = i32::from(self.next_16_bits());
+                self.registers[register] = number;
+
             }
             Opcode::ADD => {
                 let register1 = self.registers[self.next_8_bits() as usize];
@@ -371,10 +372,17 @@ impl VM {
                 self.next_8_bits();
             }
             Opcode::LUI => {
-                let register1 = self.next_8_bits() as usize;
-                let value = self.next_16_bits() as i16;
-                let save: i16 = (self.registers[register1] << 16) as i16;
-                self.registers[register1] = (save + value) as i32;
+                // TODO: This could definitely be cleaned up
+                let test: i32 = -50000;
+                let register = self.next_8_bits() as usize;
+                let value = self.registers[register];
+                let uv1 = self.next_8_bits() as i32;
+                let uv2 = self.next_8_bits() as i32;
+                let value = value.checked_shl(8).unwrap();
+                let value = value | uv1;
+                let value = value.checked_shl(8).unwrap();
+                let value = value | uv2;
+                self.registers[register] = value;
             }
         };
         None
