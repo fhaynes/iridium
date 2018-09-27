@@ -29,7 +29,7 @@ pub const DEFAULT_HEAP_STARTING_SIZE: usize = 64;
 #[derive(Default, Clone)]
 pub struct VM {
     /// Array that simulates having hardware registers
-    pub registers: [i64; 32],
+    pub registers: [i32; 32],
     /// Array that simulates having floating point hardware registers
     pub float_registers: [f64; 32],
     /// Program counter that tracks which byte is being executed
@@ -129,8 +129,9 @@ impl VM {
         match self.decode_opcode() {
             Opcode::LOAD => {
                 let register = self.next_8_bits() as usize;
-                let number = u32::from(self.next_16_bits());
-                self.registers[register] = number as i64;
+                let number = i32::from(self.next_16_bits());
+                self.registers[register] = number;
+
             }
             Opcode::ADD => {
                 let register1 = self.registers[self.next_8_bits() as usize];
@@ -226,7 +227,7 @@ impl VM {
             Opcode::ALOC => {
                 let register = self.next_8_bits() as usize;
                 let bytes = self.registers[register];
-                let new_end = self.heap.len() as i64 + bytes;
+                let new_end = self.heap.len() as i32 + bytes;
                 self.heap.resize(new_end as usize, 0);
             }
             Opcode::INC => {
@@ -371,12 +372,24 @@ impl VM {
                 self.next_8_bits();
             }
             Opcode::LUI => {
-                let register1 = self.registers[self.next_8_bits() as usize];
-                self.registers[self.next_8_bits() as usize] = !register1;
-                self.next_8_bits();
+                let test: i32 = -50000;
+                let register = self.next_8_bits() as usize;
+                let value = self.registers[register];
+                let uv1 = self.next_8_bits() as i32;
+                let uv2 = self.next_8_bits() as i32;
+                let value = value.checked_shl(8).unwrap();
+                let value = value | uv1;
+                let value = value.checked_shl(8).unwrap();
+                let value = value | uv2;
+                self.registers[register] = value;
             }
         };
         None
+    }
+
+    pub fn print_i32_register(&self, register: usize) {
+        let bits = self.registers[register];
+        println!("bits: {:#032b}", bits);
     }
 
     pub fn get_test_vm() -> VM {
@@ -852,5 +865,13 @@ mod tests {
         test_vm.program = vec![38, 0, 1, 2];
         test_vm.run_once();
         assert_eq!(test_vm.registers[1], -6);
+    }
+
+    #[test]
+    fn test_lui_opcode() {
+        let mut test_vm = VM::new();
+        test_vm.program = vec![39, 0, 0, 1];
+        test_vm.run_once();
+        assert_eq!(test_vm.registers[0], 1);
     }
 }

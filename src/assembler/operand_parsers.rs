@@ -19,7 +19,8 @@ named!(integer_operand<CompleteStr, Token>,
                         tmp.push_str("-");
                     }
                     tmp.push_str(&reg_num.to_string());
-                    Token::IntegerOperand{value: reg_num.parse::<i32>().unwrap()}
+                    let converted = tmp.parse::<i32>().unwrap();
+                    Token::IntegerOperand{value: converted}
                 }
             )
         )
