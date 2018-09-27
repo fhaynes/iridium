@@ -13,7 +13,14 @@ named!(integer_operand<CompleteStr, Token>,
             sign: opt!(tag!("-")) >>
             reg_num: digit >>
             (
-                Token::IntegerOperand{value: reg_num.parse::<i32>().unwrap()}
+                {
+                    let mut tmp = String::from("");
+                    if sign.is_some() {
+                        tmp.push_str("-");
+                    }
+                    tmp.push_str(&reg_num.to_string());
+                    Token::IntegerOperand{value: reg_num.parse::<i32>().unwrap()}
+                }
             )
         )
     )
@@ -24,13 +31,19 @@ named!(float_operand<CompleteStr, Token>,
         do_parse!(
             tag!("#") >>
             sign: opt!(tag!("-")) >>
-            reg_num: digit >>
+            left_nums: digit >>
             tag!(".") >>
-            post_num: digit >>
+            right_nums: digit >>
             (
                 {
-
-                    Token::FloatOperand{value: (reg_num.to_string() + "." + &post_num).parse::<f64>().unwrap()}
+                    let mut tmp = String::from("");
+                    if sign.is_some() {
+                        tmp.push_str("-");
+                    }
+                    tmp.push_str(&left_nums.to_string());
+                    tmp.push_str(".");
+                    tmp.push_str(&right_nums.to_string());
+                    Token::FloatOperand{value: tmp.parse::<f64>().unwrap()}
                 }
             )
         )
