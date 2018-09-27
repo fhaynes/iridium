@@ -206,6 +206,9 @@ impl Assembler {
                 "asciiz" => {
                     self.handle_asciiz(i);
                 }
+                "integer" => {
+                    self.handle_integer(i);
+                }
                 _ => {
                     self.errors.push(AssemblerError::UnknownDirectiveFound {
                         directive: directive_name.clone(),
@@ -252,6 +255,41 @@ impl Assembler {
             None => {
                 // This just means someone typed `.asciiz` for some reason
                 println!("String constant following an .asciiz was empty");
+            }
+        }
+    }
+
+    /// Handles a declaration of an integer numerical constant:
+    /// total_cats: .integer #500
+    fn handle_integer(&mut self, i: &AssemblerInstruction) {
+        // Being a constant declaration, this is only meaningful in the first pass
+        if self.phase != AssemblerPhase::First {
+            return;
+        }
+        match i.get_i32_constant() {
+            Some(s) => {
+                match i.get_label_name() {
+                    Some(name) => {
+                        self.symbols.set_symbol_offset(&name, self.ro_offset);
+                    }
+                    None => {
+                        // This would be someone typing:
+                        // .i32 50
+                        println!("Found a string constant with no associated label!");
+                        return;
+                    }
+                };
+                let mut wtr = vec![];
+                // TODO: Remove unwrap?
+                wtr.write_i32::<LittleEndian>(s).unwrap();
+                for byte in &wtr {
+                    self.ro.push(*byte);
+                    self.ro_offset += 1;
+                }
+            }
+            None => {
+                // This just means someone typed `.asciiz` for some reason
+                println!("integer constant following an .integer was empty");
             }
         }
     }
@@ -378,9 +416,18 @@ mod tests {
 
     #[test]
     /// Simple test of data that goes into the read only section
-    fn test_ro_data() {
+    fn test_ro_data_asciiz() {
         let mut asm = Assembler::new();
         let test_string = ".data\ntest: .asciiz 'This is a test'\n.code\n";
+        let program = asm.assemble(test_string);
+        assert_eq!(program.is_ok(), true);
+    }
+
+    #[test]
+    /// Simple test of data that goes into the read only section
+    fn test_ro_data_i32() {
+        let mut asm = Assembler::new();
+        let test_string = ".data\ntest: .integer #400\n.code\n";
         let program = asm.assemble(test_string);
         assert_eq!(program.is_ok(), true);
     }
@@ -389,7 +436,7 @@ mod tests {
     /// This tests that a section name that isn't `code` or `data` throws an error
     fn test_bad_ro_data() {
         let mut asm = Assembler::new();
-        let test_string = ".code\ntest: .asciiz 'This is a test'\n.wrong\n";
+        let test_string = ".data\ntest: .asciiz 'This is a test'\n.wrong\n";
         let program = asm.assemble(test_string);
         assert_eq!(program.is_ok(), false);
     }

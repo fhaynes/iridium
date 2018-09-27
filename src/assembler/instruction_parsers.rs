@@ -89,6 +89,16 @@ impl AssemblerInstruction {
         }
     }
 
+    pub fn get_i32_constant(&self) -> Option<i32> {
+        match &self.operand1 {
+            Some(d) => match d {
+                Token::IntegerOperand { value } => Some(*value),
+                _ => None,
+            },
+            None => None,
+        }
+    }
+
     pub fn get_label_name(&self) -> Option<String> {
         match &self.label {
             Some(l) => match l {
