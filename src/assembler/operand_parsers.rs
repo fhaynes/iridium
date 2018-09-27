@@ -10,6 +10,7 @@ named!(integer_operand<CompleteStr, Token>,
     ws!(
         do_parse!(
             tag!("#") >>
+            sign: opt!(tag!("-")) >>
             reg_num: digit >>
             (
                 Token::IntegerOperand{value: reg_num.parse::<i32>().unwrap()}
@@ -22,6 +23,7 @@ named!(float_operand<CompleteStr, Token>,
     ws!(
         do_parse!(
             tag!("#") >>
+            sign: opt!(tag!("-")) >>
             reg_num: digit >>
             tag!(".") >>
             post_num: digit >>
