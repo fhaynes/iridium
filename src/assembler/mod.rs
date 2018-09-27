@@ -98,6 +98,7 @@ impl Assembler {
                 }
                 // Run the second pass, which translates opcodes and associated operands into the bytecode
                 let mut body = self.process_second_phase(&program);
+                println!("Program is: {:#?}", body);
 
                 // Get the header so we can smush it into the bytecode letter
                 let mut assembled_program = self.write_pie_header();
@@ -136,6 +137,7 @@ impl Assembler {
             if i.is_directive() {
                 self.process_directive(i);
             }
+
             // This is used to keep track of which instruction we hit an error on
             self.current_instruction += 1;
         }
@@ -159,6 +161,11 @@ impl Assembler {
                 // is in and decide what to do about it
                 self.process_directive(i);
             }
+
+            if i.is_label() {
+                let label_name = i.get_label_name().unwrap();
+                let offset = self.symbols.symbol_value(&label_name).or(Some(self.current_instruction * 4));
+            }
             self.current_instruction += 1
         }
         program
@@ -167,7 +174,9 @@ impl Assembler {
     fn process_label_declaration(&mut self, i: &AssemblerInstruction) {
         // Check if the label is None or String
         let name = match i.get_label_name() {
-            Some(name) => name,
+            Some(name) => {
+                name
+            },
             None => {
                 self.errors
                     .push(AssemblerError::StringConstantDeclaredWithoutLabel {

@@ -42,6 +42,7 @@ pub struct VM {
     remainder: usize,
     /// Contains the result of the last comparison operation
     equal_flag: bool,
+    loop_counter: usize,
     /// Contains the read-only section data
     ro_data: Vec<u8>,
     /// Is a unique, randomly generated UUID for identifying this VM
@@ -50,6 +51,7 @@ pub struct VM {
     events: Vec<VMEvent>,
     /// Number of logical cores the system reports
     pub logical_cores: usize,
+
 }
 
 impl VM {
@@ -62,6 +64,7 @@ impl VM {
             ro_data: vec![],
             heap: vec![0; DEFAULT_HEAP_STARTING_SIZE],
             pc: 0,
+            loop_counter: 0,
             remainder: 0,
             equal_flag: false,
             id: Uuid::new_v4(),
@@ -89,7 +92,6 @@ impl VM {
             return self.events.clone();
         }
 
-        // If the header is valid, we need to change the PC to be at bit 65.
         self.pc = 64 + self.get_starting_offset();
         let mut is_done = None;
         while is_done.is_none() {
@@ -131,7 +133,6 @@ impl VM {
                 let register = self.next_8_bits() as usize;
                 let number = i32::from(self.next_16_bits());
                 self.registers[register] = number;
-
             }
             Opcode::ADD => {
                 let register1 = self.registers[self.next_8_bits() as usize];
@@ -372,7 +373,6 @@ impl VM {
                 self.next_8_bits();
             }
             Opcode::LUI => {
-                let test: i32 = -50000;
                 let register = self.next_8_bits() as usize;
                 let value = self.registers[register];
                 let uv1 = self.next_8_bits() as i32;
@@ -382,6 +382,20 @@ impl VM {
                 let value = value.checked_shl(8).unwrap();
                 let value = value | uv2;
                 self.registers[register] = value;
+            }
+            Opcode::LOOP => {
+                if self.loop_counter != 0 {
+                    self.loop_counter -= 1;
+                    let target = self.next_16_bits();
+                    println!("Target is: {:#?}", target);
+                } else {
+                    self.pc += 3;
+                }
+            }
+            Opcode::CLOOP => {
+                let loop_count = self.next_16_bits();
+                self.loop_counter = loop_count as usize;
+                self.next_8_bits();
             }
         };
         None
@@ -873,5 +887,13 @@ mod tests {
         test_vm.program = vec![39, 0, 0, 1];
         test_vm.run_once();
         assert_eq!(test_vm.registers[0], 1);
+    }
+
+    #[test]
+    fn test_cloop_opcode() {
+        let mut test_vm = VM::new();
+        test_vm.program = vec![40, 0, 10, 0];
+        test_vm.run_once();
+        assert_eq!(test_vm.loop_counter, 10);
     }
 }

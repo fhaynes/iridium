@@ -1,0 +1,4 @@
+.data
+.code
+cloop #10
+load $1 #20

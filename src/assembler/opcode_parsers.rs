@@ -7,7 +7,9 @@ named!(pub opcode<CompleteStr, Token>,
   do_parse!(
       opcode: alpha1 >>
       (
-        Token::Op{code: Opcode::from(opcode)}
+        {
+            Token::Op{code: Opcode::from(opcode)}
+        }
       )
   )
 );

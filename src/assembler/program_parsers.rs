@@ -72,7 +72,18 @@ mod tests {
         let result = result.unwrap();
         test_vm.program = result;
         test_vm.run();
-        println!("{:#?}", test_vm.registers);
+
+    }
+
+    #[test]
+    fn test_parse_cloop() {
+        let mut test_assembler = Assembler::new();
+        let mut test_vm = VM::new();
+        let result = test_assembler.assemble(".data\n.code\ncloop #10");
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        test_vm.program = result;
+        test_vm.run();
 
     }
 }

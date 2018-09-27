@@ -62,6 +62,7 @@ fn main() {
     match target_file {
         Some(filename) => {
             let program = read_file(filename);
+
             let mut asm = Assembler::new();
             let mut vm = VM::new();
             vm.logical_cores = num_threads;
@@ -70,11 +71,6 @@ fn main() {
                 Ok(p) => {
                     vm.add_bytes(p);
                     let events = vm.run();
-                    println!("VM Events");
-                    println!("--------------------------");
-                    for event in &events {
-                        println!("{:#?}", event);
-                    }
                     std::process::exit(0);
                 }
                 Err(_e) => {}
