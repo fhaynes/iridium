@@ -32,6 +32,8 @@ named!(pub program<CompleteStr, Program>,
 #[cfg(test)]
 mod tests {
     use super::*;
+    use assembler::Assembler;
+    use vm::VM;
 
     #[test]
     fn test_parse_program() {
@@ -51,7 +53,6 @@ mod tests {
         let symbols = SymbolTable::new();
         let bytecode = program.to_bytes(&symbols);
         assert_eq!(bytecode.len(), 4);
-        println!("{:?}", bytecode);
     }
 
     #[test]
@@ -59,5 +60,19 @@ mod tests {
         let test_program = CompleteStr(".data\nhello: .asciiz 'Hello everyone!'\n.code\nhlt");
         let result = program(test_program);
         assert_eq!(result.is_ok(), true);
+    }
+
+
+    #[test]
+    fn test_parse_load_greater_than_i16() {
+        let mut test_assembler = Assembler::new();
+        let mut test_vm = VM::new();
+        let result = test_assembler.assemble(".data\n.code\nload $0 #-50000");
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        test_vm.program = result;
+        test_vm.run();
+        println!("{:#?}", test_vm.registers);
+
     }
 }

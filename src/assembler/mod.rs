@@ -58,6 +58,8 @@ pub struct Assembler {
     current_instruction: u32,
     /// Any errors we find along the way. At the end, we'll present them to the user.
     errors: Vec<AssemblerError>,
+    /// Scratch buffer
+    buf: [u8; 4],
 }
 
 impl Assembler {
@@ -72,6 +74,7 @@ impl Assembler {
             phase: AssemblerPhase::First,
             symbols: SymbolTable::new(),
             current_section: None,
+            buf: [0, 0, 0, 0],
         }
     }
 

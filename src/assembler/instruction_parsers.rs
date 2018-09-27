@@ -1,3 +1,6 @@
+use std::io::Cursor;
+
+use byteorder::{ReadBytesExt, WriteBytesExt, BigEndian, LittleEndian, ByteOrder};
 use nom::types::CompleteStr;
 
 use assembler::label_parsers::label_declaration;
@@ -5,6 +8,11 @@ use assembler::opcode_parsers::*;
 use assembler::operand_parsers::operand;
 use assembler::comment_parsers::comment;
 use assembler::{SymbolTable, Token};
+use instruction::Opcode;
+
+const MAX_I16: i32 = 32768;
+const MIN_I16: i32 = -32768;
+
 #[derive(Debug, PartialEq)]
 pub struct AssemblerInstruction {
     pub opcode: Option<Token>,
@@ -106,16 +114,35 @@ impl AssemblerInstruction {
             Token::Register { reg_num } => {
                 results.push(*reg_num);
             }
+            // This operand is a bit special. Since we use fixed width instructions, we only have 16-bits to use for the number.
+            // If the user wants to store a 32-bit register, we need to convert the number into bits, and then use two instructions to
+            // get the entire value into the register
             Token::IntegerOperand { value } => {
-                let converted = *value as u16;
-                let byte1 = converted;
-                let byte2 = converted >> 8;
-                results.push(byte2 as u8);
-                results.push(byte1 as u8);
+                if *value > MAX_I16 || *value < MIN_I16 {
+                    // This creates the second instructino that loads the second group of 16 bits
+                    let mut wtr = vec![];
+                    wtr.write_i32::<LittleEndian>(*value).unwrap();
+                    results.push(wtr[3]);
+                    results.push(wtr[2]);
+
+                    let opcode: u8 = 39;
+                    let register_offset = results.len() - 3;
+                    let register = results[register_offset];
+                    results.push(opcode);
+                    results.push(register);
+                    results.push(wtr[1]);
+                    results.push(wtr[0]);
+
+                } else {
+                    let byte1 = value >> 8;
+                    let byte2 = value >> 8;
+                    results.push(byte2 as u8);
+                    results.push(byte1 as u8);
+                }
             }
             Token::LabelUsage { name } => {
                 if let Some(value) = symbols.symbol_value(name) {
-                    let byte1 = value;
+                    let byte1 = value >> 8;
                     let byte2 = value >> 8;
                     results.push(byte2 as u8);
                     results.push(byte1 as u8);
