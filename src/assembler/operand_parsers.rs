@@ -82,8 +82,9 @@ mod tests {
 
     #[test]
     fn test_parse_float_operand() {
-        vec!["#100.3", "#-100.3", "#1.0", "0.0"].iter().map(|i| {
+        let test = vec!["#100.3", "#-100.3", "#1.0", "#0.0"];
+        for i in &test {
             assert_eq!(float_operand(CompleteStr(i)).is_ok(), true);
-        });
+        }
     }
 }
