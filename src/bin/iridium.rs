@@ -4,12 +4,12 @@ use std::path::Path;
 use std::sync::mpsc::Receiver;
 use std::thread;
 
+extern crate byteorder;
+extern crate chrono;
 #[macro_use]
 extern crate clap;
 #[macro_use]
 extern crate log;
-extern crate byteorder;
-extern crate chrono;
 extern crate env_logger;
 extern crate num_cpus;
 extern crate uuid;
@@ -22,9 +22,8 @@ use iridium::repl::REPL;
 use iridium::vm::VM;
 
 fn main() {
-    let mut _repl_receiver: Receiver<String>;
-
     env_logger::init();
+    let mut _repl_receiver: Receiver<String>;
     info!("Starting logging!");
     let yaml = load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml).get_matches();

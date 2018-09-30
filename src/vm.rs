@@ -6,7 +6,7 @@ use chrono::prelude::*;
 use num_cpus;
 use uuid::Uuid;
 
-use assembler::{PIE_HEADER_LENGTH, PIE_HEADER_PREFIX};
+use assembler::{PIE_HEADER_LENGTH, PIE_HEADER_PREFIX, Assembler};
 use instruction::Opcode;
 use std::f64::EPSILON;
 
@@ -17,14 +17,24 @@ pub enum VMEventType {
     Crash { code: u32 },
 }
 
+impl VMEventType {
+    pub fn stop_code(&self) -> u32 {
+        match &self {
+            &VMEventType::Start => { 0 }
+            &VMEventType::GracefulStop{ code } => { *code }
+            &VMEventType::Crash{ code } => { *code }
+        }
+    }
+}
 #[derive(Clone, Debug)]
 pub struct VMEvent {
-    event: VMEventType,
+    pub event: VMEventType,
     at: DateTime<Utc>,
     application_id: Uuid,
 }
 
 pub const DEFAULT_HEAP_STARTING_SIZE: usize = 64;
+
 /// Virtual machine struct that will execute bytecode
 #[derive(Default, Clone)]
 pub struct VM {
@@ -95,7 +105,7 @@ impl VM {
             return self.events.clone();
         }
 
-        self.pc = 64 + self.get_starting_offset();
+        self.pc = 68 + self.get_starting_offset();
         let mut is_done = None;
         while is_done.is_none() {
             is_done = self.execute_instruction();
@@ -136,6 +146,7 @@ impl VM {
                 let register = self.next_8_bits() as usize;
                 let number = i32::from(self.next_16_bits());
                 self.registers[register] = number;
+
             }
             Opcode::ADD => {
                 let register1 = self.registers[self.next_8_bits() as usize];
@@ -159,11 +170,11 @@ impl VM {
                 self.remainder = (register1 % register2) as usize;
             }
             Opcode::HLT => {
-                println!("HLT encountered");
+                info!("HLT encountered");
                 return Some(0);
             }
             Opcode::IGL => {
-                println!("Illegal instruction encountered");
+                error!("Illegal instruction encountered");
                 return Some(1);
             }
             Opcode::JMP => {
@@ -390,7 +401,7 @@ impl VM {
                 if self.loop_counter != 0 {
                     self.loop_counter -= 1;
                     let target = self.next_16_bits();
-                    self.next_8_bits();
+                    self.pc = target as usize;
                 } else {
                     self.pc += 3;
                 }
@@ -415,8 +426,44 @@ impl VM {
                 let data = self.registers[self.next_8_bits() as usize];
                 let mut buf: [u8; 4] = [0, 0, 0, 0];
                 buf.as_mut().write_i32::<LittleEndian>(data);
-                println!("Buf is: {:?}", buf);
-                //&mut self.heap[offset..offset + 4].write_i32::<LittleEndian>().unwrap();
+            }
+            Opcode::PUSH => {
+                let data = self.registers[self.next_8_bits() as usize];
+                let mut buf: [u8; 4] = [0, 0, 0, 0];
+                buf.as_mut().write_i32::<LittleEndian>(data);
+                for b in &buf {
+                    self.stack.push(*b);
+                }
+            }
+            Opcode::POP => {
+                let target_register = self.next_8_bits() as usize;
+                let mut buf: [u8; 4] = [0, 0, 0, 0];
+                let new_len = self.stack.len() - 4;
+                let mut c = 0;
+                for removed_element in self.stack.drain(new_len..) {
+                    buf[c] = removed_element;
+                    c += 1;
+                }
+                let data = LittleEndian::read_i32(&buf);
+                self.registers[target_register] = data;
+            }
+            Opcode::CALL => {
+                let return_destination = self.pc + 3;
+                let destination = self.next_16_bits();
+                let bytes: [u8; 4] = VM::i32_to_bytes(return_destination as i32);
+                self.stack.extend_from_slice(&bytes);
+                self.pc = destination as usize;
+            }
+            Opcode::RET => {
+                let mut buf: [u8; 4] = [0, 0, 0, 0];
+                let new_len = self.stack.len() - 4;
+                let mut c = 0;
+                for removed_element in self.stack.drain(new_len..) {
+                    buf[c] = removed_element;
+                    c += 1;
+                }
+                let data = LittleEndian::read_i32(&buf);
+                self.pc = data as usize;
             }
         };
         None
@@ -442,7 +489,8 @@ impl VM {
             prepension.push(byte.clone());
         }
 
-        while prepension.len() < PIE_HEADER_LENGTH {
+        // The 4 is added here to allow for the 4 bytes that tell the VM where the executable code starts
+        while prepension.len() < PIE_HEADER_LENGTH + 4{
             prepension.push(0);
         }
 
@@ -451,8 +499,9 @@ impl VM {
     }
 
     fn get_starting_offset(&self) -> usize {
-        let mut rdr = Cursor::new(&self.program[4..8]);
-        rdr.read_u32::<LittleEndian>().unwrap() as usize
+        let mut rdr = Cursor::new(&self.program[64..68]);
+        let starting_offset = rdr.read_u32::<LittleEndian>().unwrap() as usize;
+        starting_offset
     }
 
     /// Attempts to decode the byte the VM's program counter is pointing at into an opcode
@@ -460,6 +509,12 @@ impl VM {
         let opcode = Opcode::from(self.program[self.pc]);
         self.pc += 1;
         opcode
+    }
+
+    fn i32_to_bytes(num: i32) -> [u8; 4] {
+        let mut buf: [u8; 4] = [0, 0, 0, 0];
+        buf.as_mut().write_i32::<LittleEndian>(num).unwrap();
+        buf
     }
 
     /// Attempts to decode the next byte into an opcode
@@ -476,7 +531,6 @@ impl VM {
         self.pc += 2;
         result
     }
-
     /// Processes the header of bytecode the VM is asked to execute
     fn verify_header(&self) -> bool {
         if self.program[0..4] != PIE_HEADER_PREFIX {
@@ -527,7 +581,9 @@ mod tests {
     fn test_add_opcode() {
         let mut test_vm = VM::get_test_vm();
         test_vm.program = vec![1, 0, 1, 2];
+        println!("{:?}", test_vm.program);
         test_vm.program = VM::prepend_header(test_vm.program);
+        println!("{:?}", test_vm.program);
         test_vm.run();
         assert_eq!(test_vm.registers[2], 15);
     }
@@ -935,5 +991,26 @@ mod tests {
         test_vm.registers[1] = 200;
         test_vm.program = vec![43, 0, 1, 0];
         test_vm.run_once();
+    }
+
+    #[test]
+    fn test_push_opcode() {
+        let mut test_vm = VM::new();
+        test_vm.registers[0] = 10;
+        test_vm.program = vec![44, 0, 0, 0];
+        test_vm.run_once();
+        assert_eq!(test_vm.stack, vec![10, 0, 0, 0]);
+    }
+
+    #[test]
+    fn test_pop_opcode() {
+        let mut test_vm = VM::new();
+        test_vm.stack.push(10);
+        test_vm.stack.push(0);
+        test_vm.stack.push(0);
+        test_vm.stack.push(0);
+        test_vm.program = vec![45, 0, 0, 0];
+        test_vm.run_once();
+        assert_eq!(test_vm.registers[0], 10);
     }
 }
