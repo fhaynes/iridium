@@ -19,7 +19,7 @@ use assembler::symbols::{Symbol, SymbolTable, SymbolType};
 use instruction::Opcode;
 
 /// Magic number that begins every bytecode file prefix. These spell out EPIE in ASCII, if you were wondering.
-pub const PIE_HEADER_PREFIX: [u8; 4] = [45, 50, 49, 45];
+pub const PIE_HEADER_PREFIX: [u8; 4] = [0x45, 0x50, 0x49, 0x45];
 
 /// Constant that determines how long the header is. There are 60 zeros left after the prefix, for later
 /// usage if needed.
@@ -389,7 +389,17 @@ mod tests {
     /// Tests assembly a small but correct program
     fn test_assemble_program() {
         let mut asm = Assembler::new();
-        let test_string = ".data\n.code\nload $0 #100\nload $1 #1\nload $2 #0\ntest: inc $0\nneq $0 $2\njmpe @test\nhlt";
+        let test_string = r"
+        .data
+        .code
+        load $0 #100
+        load $1 #1
+        load $2 #0
+        test: inc $0
+        neq $0 $2
+        jmpe @test
+        hlt
+        ";
         let program = asm.assemble(test_string).unwrap();
         let mut vm = VM::new();
         assert_eq!(program.len(), 92);
@@ -401,7 +411,18 @@ mod tests {
     /// Simple test of data that goes into the read only section
     fn test_code_start_offset_written() {
         let mut asm = Assembler::new();
-        let test_string = ".data\ntest1: .asciiz 'Hello'\n.code\nload $0 #100\nload $1 #1\nload $2 #0\ntest: inc $0\nneq $0 $2\njmpe @test\nhlt";
+        let test_string = r"
+        .data
+        test1: .asciiz 'Hello'
+        .code
+        load $0 #100
+        load $1 #1
+        load $2 #0
+        test: inc $0
+        neq $0 $2
+        jmpe @test
+        hlt
+        ";
         let program = asm.assemble(test_string);
         assert_eq!(program.is_ok(), true);
         let unwrapped = program.unwrap();
@@ -427,7 +448,11 @@ mod tests {
     /// Simple test of data that goes into the read only section
     fn test_ro_data_asciiz() {
         let mut asm = Assembler::new();
-        let test_string = ".data\ntest: .asciiz 'This is a test'\n.code\n";
+        let test_string = r"
+        .data
+        test: .asciiz 'This is a test'
+        .code
+        ";
         let program = asm.assemble(test_string);
         assert_eq!(program.is_ok(), true);
     }
@@ -436,7 +461,11 @@ mod tests {
     /// Simple test of data that goes into the read only section
     fn test_ro_data_i32() {
         let mut asm = Assembler::new();
-        let test_string = ".data\ntest: .integer #400\n.code\n";
+        let test_string = r"
+        .data
+        test: .integer #300
+        .code
+        ";
         let program = asm.assemble(test_string);
         assert_eq!(program.is_ok(), true);
     }
@@ -445,7 +474,11 @@ mod tests {
     /// This tests that a section name that isn't `code` or `data` throws an error
     fn test_bad_ro_data() {
         let mut asm = Assembler::new();
-        let test_string = ".data\ntest: .asciiz 'This is a test'\n.wrong\n";
+        let test_string = r"
+        .code
+        test: .asciiz 'This is a test'
+        .wrong
+        ";
         let program = asm.assemble(test_string);
         assert_eq!(program.is_ok(), false);
     }
@@ -466,7 +499,10 @@ mod tests {
     /// Tests that code inside a proper segment works
     fn test_first_phase_inside_segment() {
         let mut asm = Assembler::new();
-        let test_string = ".data\ntest: .asciiz 'Hello'";
+        let test_string = r"
+        .data
+        test: .asciiz 'Hello'
+        ";
         let result = program(CompleteStr(test_string));
         assert_eq!(result.is_ok(), true);
         let (_, p) = result.unwrap();
