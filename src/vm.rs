@@ -25,6 +25,7 @@ pub struct VMEvent {
 }
 
 pub const DEFAULT_HEAP_STARTING_SIZE: usize = 64;
+
 /// Virtual machine struct that will execute bytecode
 #[derive(Default, Clone)]
 pub struct VM {
@@ -415,8 +416,26 @@ impl VM {
                 let data = self.registers[self.next_8_bits() as usize];
                 let mut buf: [u8; 4] = [0, 0, 0, 0];
                 buf.as_mut().write_i32::<LittleEndian>(data);
-                println!("Buf is: {:?}", buf);
-                //&mut self.heap[offset..offset + 4].write_i32::<LittleEndian>().unwrap();
+            }
+            Opcode::PUSH => {
+                let data = self.registers[self.next_8_bits() as usize];
+                let mut buf: [u8; 4] = [0, 0, 0, 0];
+                buf.as_mut().write_i32::<LittleEndian>(data);
+                for b in &buf {
+                    self.stack.push(*b);
+                }
+            }
+            Opcode::POP => {
+                let target_register = self.next_8_bits() as usize;
+                let mut buf: [u8; 4] = [0, 0, 0, 0];
+                let new_len = self.stack.len() - 4;
+                let mut c = 0;
+                for removed_element in self.stack.drain(new_len..) {
+                    buf[c] = removed_element;
+                    c += 1;
+                }
+                let data = LittleEndian::read_i32(&buf);
+                self.registers[target_register] = data;
             }
         };
         None
@@ -935,5 +954,25 @@ mod tests {
         test_vm.registers[1] = 200;
         test_vm.program = vec![43, 0, 1, 0];
         test_vm.run_once();
+    }
+
+    #[test]
+    fn test_push_opcode() {
+        let mut test_vm = VM::new();
+        test_vm.registers[0] = 10;
+        test_vm.program = vec![44, 0, 0, 0];
+        test_vm.run_once();
+        assert_eq!(test_vm.stack, vec![10, 0, 0, 0]);
+    }
+    #[test]
+    fn test_pop_opcode() {
+        let mut test_vm = VM::new();
+        test_vm.stack.push(10);
+        test_vm.stack.push(0);
+        test_vm.stack.push(0);
+        test_vm.stack.push(0);
+        test_vm.program = vec![45, 0, 0, 0];
+        test_vm.run_once();
+        assert_eq!(test_vm.registers[0], 10);
     }
 }

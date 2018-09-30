@@ -48,6 +48,8 @@ pub enum Opcode {
     LOOP,
     LOADM,
     SETM,
+    PUSH,
+    POP,
 }
 
 impl From<Opcode> for u8 {
@@ -97,6 +99,8 @@ impl From<Opcode> for u8 {
             Opcode::LOOP => 41,
             Opcode::LOADM => 42,
             Opcode::SETM => 43,
+            Opcode::PUSH => 44,
+            Opcode::POP => 45,
             Opcode::IGL => 100,
         }
     }
@@ -149,6 +153,8 @@ impl From<u8> for Opcode {
             41 => Opcode::LOOP,
             42 => Opcode::LOADM,
             43 => Opcode::SETM,
+            44 => Opcode::PUSH,
+            45 => Opcode::POP,
             _ => Opcode::IGL,
         }
     }
@@ -203,6 +209,8 @@ impl<'a> From<CompleteStr<'a>> for Opcode {
             CompleteStr("loop") => Opcode::LOOP,
             CompleteStr("loadm") => Opcode::LOADM,
             CompleteStr("setm") => Opcode::SETM,
+            CompleteStr("push") => Opcode::PUSH,
+            CompleteStr("pop") => Opcode::POP,
             _ => Opcode::IGL,
         }
     }
