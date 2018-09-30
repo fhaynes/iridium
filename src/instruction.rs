@@ -1,7 +1,6 @@
 use nom::types::CompleteStr;
 
 /// Represents an opcode, which tells our interpreter what to do with the following operands
-/// Opcodes are a nice way to represent each of our Opcodes
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Opcode {
     LOAD,
@@ -47,6 +46,7 @@ pub enum Opcode {
     LUI,
     CLOOP,
     LOOP,
+    LOADM,
 }
 
 impl From<Opcode> for u8 {
@@ -94,6 +94,7 @@ impl From<Opcode> for u8 {
             Opcode::LUI => 39,
             Opcode::CLOOP => 40,
             Opcode::LOOP => 41,
+            Opcode::LOADM => 42,
             Opcode::IGL => 100,
         }
     }
@@ -144,6 +145,7 @@ impl From<u8> for Opcode {
             39 => Opcode::LUI,
             40 => Opcode::CLOOP,
             41 => Opcode::LOOP,
+            42 => Opcode::LOADM,
             _ => Opcode::IGL,
         }
     }
@@ -196,6 +198,7 @@ impl<'a> From<CompleteStr<'a>> for Opcode {
             CompleteStr("lui") => Opcode::LUI,
             CompleteStr("cloop") => Opcode::CLOOP,
             CompleteStr("loop") => Opcode::LOOP,
+            CompleteStr("loadm") => Opcode::LOADM,
             _ => Opcode::IGL,
         }
     }

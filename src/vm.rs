@@ -400,6 +400,9 @@ impl VM {
                 self.loop_counter = loop_count as usize;
                 self.next_8_bits();
             }
+            Opcode::LOADM => {
+                
+            }
         };
         None
     }
