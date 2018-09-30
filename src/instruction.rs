@@ -47,6 +47,7 @@ pub enum Opcode {
     CLOOP,
     LOOP,
     LOADM,
+    SETM,
 }
 
 impl From<Opcode> for u8 {
@@ -95,6 +96,7 @@ impl From<Opcode> for u8 {
             Opcode::CLOOP => 40,
             Opcode::LOOP => 41,
             Opcode::LOADM => 42,
+            Opcode::SETM => 43,
             Opcode::IGL => 100,
         }
     }
@@ -146,6 +148,7 @@ impl From<u8> for Opcode {
             40 => Opcode::CLOOP,
             41 => Opcode::LOOP,
             42 => Opcode::LOADM,
+            43 => Opcode::SETM,
             _ => Opcode::IGL,
         }
     }
@@ -199,6 +202,7 @@ impl<'a> From<CompleteStr<'a>> for Opcode {
             CompleteStr("cloop") => Opcode::CLOOP,
             CompleteStr("loop") => Opcode::LOOP,
             CompleteStr("loadm") => Opcode::LOADM,
+            CompleteStr("setm") => Opcode::SETM,
             _ => Opcode::IGL,
         }
     }

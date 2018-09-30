@@ -6,8 +6,8 @@ use std::io;
 use std::io::{Read, Write};
 use std::num::ParseIntError;
 use std::path::Path;
-use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc;
+use std::sync::mpsc::{Receiver, Sender};
 
 use nom::types::CompleteStr;
 
@@ -30,7 +30,7 @@ pub struct REPL {
     asm: Assembler,
     scheduler: Scheduler,
     pub tx_pipe: Option<Box<Sender<String>>>,
-    pub rx_pipe: Option<Box<Receiver<String>>>
+    pub rx_pipe: Option<Box<Receiver<String>>>,
 }
 
 impl REPL {
@@ -43,7 +43,7 @@ impl REPL {
             asm: Assembler::new(),
             scheduler: Scheduler::new(),
             tx_pipe: Some(Box::new(tx)),
-            rx_pipe: Some(Box::new(rx))
+            rx_pipe: Some(Box::new(rx)),
         }
     }
 
@@ -97,9 +97,7 @@ impl REPL {
             None
         } else {
             let program = match program(CompleteStr(&buffer)) {
-                Ok((_remainder, program)) => {
-                    Some(program)
-                }
+                Ok((_remainder, program)) => Some(program),
                 Err(e) => {
                     self.send_message(format!("Unable to parse input: {:?}", e));
                     self.send_prompt();
@@ -113,9 +111,7 @@ impl REPL {
                     self.vm.run_once();
                     None
                 }
-                None => {
-                    None
-                }
+                None => None,
             }
         }
     }
@@ -123,27 +119,21 @@ impl REPL {
     pub fn send_message(&mut self, msg: String) {
         match &self.tx_pipe {
             Some(pipe) => {
-                match pipe.send(msg+"\n") {
-                    Ok(_) => {},
+                match pipe.send(msg + "\n") {
+                    Ok(_) => {}
                     Err(_e) => {}
                 };
-            },
-            None => {
-
             }
+            None => {}
         }
     }
     pub fn send_prompt(&mut self) {
         match &self.tx_pipe {
-            Some(pipe) => {
-                match pipe.send(PROMPT.to_owned()) {
-                    Ok(_) => {},
-                    Err(_e) => {}
-                }
+            Some(pipe) => match pipe.send(PROMPT.to_owned()) {
+                Ok(_) => {}
+                Err(_e) => {}
             },
-            None => {
-
-            }
+            None => {}
         }
     }
 
@@ -211,7 +201,7 @@ impl REPL {
             _ => {
                 self.send_message("Invalid command!".to_string());
                 self.send_prompt();
-            },
+            }
         };
     }
 

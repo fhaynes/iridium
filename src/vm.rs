@@ -1,7 +1,7 @@
 use std;
 use std::io::Cursor;
 
-use byteorder::{LittleEndian, ReadBytesExt};
+use byteorder::*;
 use chrono::prelude::*;
 use num_cpus;
 use uuid::Uuid;
@@ -38,6 +38,8 @@ pub struct VM {
     pub program: Vec<u8>,
     /// Used for heap memory
     heap: Vec<u8>,
+    /// Used to represent the stack
+    stack: Vec<u8>,
     /// Contains the remainder of modulo division ops
     remainder: usize,
     /// Contains the result of the last comparison operation
@@ -52,7 +54,6 @@ pub struct VM {
     events: Vec<VMEvent>,
     /// Number of logical cores the system reports
     pub logical_cores: usize,
-
 }
 
 impl VM {
@@ -64,6 +65,7 @@ impl VM {
             program: vec![],
             ro_data: vec![],
             heap: vec![0; DEFAULT_HEAP_STARTING_SIZE],
+            stack: vec![],
             pc: 0,
             loop_counter: 0,
             remainder: 0,
@@ -278,27 +280,27 @@ impl VM {
                 let register = self.next_8_bits() as usize;
                 let number = f64::from(self.next_16_bits());
                 self.float_registers[register] = number;
-            },
+            }
             Opcode::ADDF64 => {
                 let register1 = self.float_registers[self.next_8_bits() as usize];
                 let register2 = self.float_registers[self.next_8_bits() as usize];
                 self.float_registers[self.next_8_bits() as usize] = register1 + register2;
-            },
+            }
             Opcode::SUBF64 => {
                 let register1 = self.float_registers[self.next_8_bits() as usize];
                 let register2 = self.float_registers[self.next_8_bits() as usize];
                 self.float_registers[self.next_8_bits() as usize] = register1 - register2;
-            },
+            }
             Opcode::MULF64 => {
                 let register1 = self.float_registers[self.next_8_bits() as usize];
                 let register2 = self.float_registers[self.next_8_bits() as usize];
                 self.float_registers[self.next_8_bits() as usize] = register1 * register2;
-            },
+            }
             Opcode::DIVF64 => {
                 let register1 = self.float_registers[self.next_8_bits() as usize];
                 let register2 = self.float_registers[self.next_8_bits() as usize];
                 self.float_registers[self.next_8_bits() as usize] = register1 / register2;
-            },
+            }
             Opcode::EQF64 => {
                 let register1 = self.float_registers[self.next_8_bits() as usize];
                 let register2 = self.float_registers[self.next_8_bits() as usize];
@@ -338,8 +340,8 @@ impl VM {
             Opcode::SHL => {
                 let reg_num = self.next_8_bits() as usize;
                 let num_bits = match self.next_8_bits() {
-                    0 => { 16 },
-                    other => { other }
+                    0 => 16,
+                    other => other,
                 };
                 self.registers[reg_num] = self.registers[reg_num].wrapping_shl(num_bits.into());
                 self.next_8_bits();
@@ -347,8 +349,8 @@ impl VM {
             Opcode::SHR => {
                 let reg_num = self.next_8_bits() as usize;
                 let num_bits = match self.next_8_bits() {
-                    0 => { 16 },
-                    other => { other }
+                    0 => 16,
+                    other => other,
                 };
                 self.registers[reg_num] = self.registers[reg_num].wrapping_shr(num_bits.into());
                 self.next_8_bits();
@@ -385,7 +387,6 @@ impl VM {
                 self.registers[register] = value;
             }
             Opcode::LOOP => {
-                println!("Loop counter is: {:?}", self.loop_counter);
                 if self.loop_counter != 0 {
                     self.loop_counter -= 1;
                     let target = self.next_16_bits();
@@ -396,12 +397,26 @@ impl VM {
             }
             Opcode::CLOOP => {
                 let loop_count = self.next_16_bits();
-                println!("Loop count: {:?}", loop_count);
                 self.loop_counter = loop_count as usize;
                 self.next_8_bits();
             }
             Opcode::LOADM => {
-                
+                let offset = self.registers[self.next_8_bits() as usize] as usize;
+                let data: i32;
+                // Explicit scoping is necessary here because we do an immutable borrow of self, then a mutable borrow to assign the result
+                {
+                    let mut slice = &self.heap[offset..offset + 4];
+                    data = slice.read_i32::<LittleEndian>().unwrap();
+                }
+                self.registers[self.next_8_bits() as usize] = data;
+            }
+            Opcode::SETM => {
+                let offset = self.registers[self.next_8_bits() as usize] as usize;
+                let data = self.registers[self.next_8_bits() as usize];
+                let mut buf: [u8; 4] = [0, 0, 0, 0];
+                buf.as_mut().write_i32::<LittleEndian>(data);
+                println!("Buf is: {:?}", buf);
+                //&mut self.heap[offset..offset + 4].write_i32::<LittleEndian>().unwrap();
             }
         };
         None
@@ -901,5 +916,24 @@ mod tests {
         test_vm.program = vec![40, 0, 10, 0];
         test_vm.run_once();
         assert_eq!(test_vm.loop_counter, 10);
+    }
+
+    #[test]
+    fn test_loadm_opcode() {
+        let mut test_vm = VM::new();
+        test_vm.registers[0] = 10;
+        test_vm.heap[10] = 100;
+        test_vm.program = vec![42, 0, 1, 0];
+        test_vm.run_once();
+        assert_eq!(test_vm.registers[1], 100);
+    }
+
+    #[test]
+    fn test_setm_opcode() {
+        let mut test_vm = VM::new();
+        test_vm.registers[0] = 10;
+        test_vm.registers[1] = 200;
+        test_vm.program = vec![43, 0, 1, 0];
+        test_vm.run_once();
     }
 }

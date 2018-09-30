@@ -1,7 +1,7 @@
 use std::fs::File;
-use std::path::Path;
-use std::sync::mpsc::{Receiver};
 use std::io::Read;
+use std::path::Path;
+use std::sync::mpsc::Receiver;
 use std::thread;
 
 #[macro_use]
@@ -86,8 +86,8 @@ fn main() {
                     match chan.recv() {
                         Ok(msg) => {
                             println!("{}", msg);
-                        },
-                        Err(_e) => {},
+                        }
+                        Err(_e) => {}
                     }
                 }
             });

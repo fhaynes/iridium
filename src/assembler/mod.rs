@@ -1,4 +1,5 @@
 pub mod assembler_errors;
+pub mod comment_parsers;
 pub mod directive_parsers;
 pub mod instruction_parsers;
 pub mod label_parsers;
@@ -6,7 +7,6 @@ pub mod opcode_parsers;
 pub mod operand_parsers;
 pub mod program_parsers;
 pub mod register_parsers;
-pub mod comment_parsers;
 pub mod symbols;
 
 use byteorder::{LittleEndian, WriteBytesExt};
@@ -158,9 +158,10 @@ impl Assembler {
                 // Opcodes know how to properly transform themselves into 32-bits, so we can just call `to_bytes` and append to our program
                 if let Some(ref label_dec) = i.label {
                     match label_dec {
-                        Token::LabelDeclaration{ ref name } => {
-                            self.symbols.set_symbol_offset(name, self.current_instruction * 4);
-                        },
+                        Token::LabelDeclaration { ref name } => {
+                            self.symbols
+                                .set_symbol_offset(name, self.current_instruction * 4);
+                        }
                         _ => {}
                     }
                 }
@@ -175,9 +176,7 @@ impl Assembler {
     fn process_label_declaration(&mut self, i: &AssemblerInstruction) {
         // Check if the label is None or String
         let name = match i.get_label_name() {
-            Some(name) => {
-                name
-            },
+            Some(name) => name,
             None => {
                 self.errors
                     .push(AssemblerError::StringConstantDeclaredWithoutLabel {

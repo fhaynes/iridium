@@ -77,9 +77,9 @@ named!(pub operand<CompleteStr, Token>,
 mod tests {
     #![allow(unused_imports)]
 
+    use super::{float_operand, integer_operand, irstring};
     use assembler::Token;
     use nom::types::CompleteStr;
-    use super::{float_operand, integer_operand, irstring};
 
     #[test]
     fn test_parse_integer_operand() {

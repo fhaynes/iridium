@@ -99,7 +99,7 @@ The first byte of a 4-byte wide instruction is the Opcode. The following Opcodes
 |=========================================================================
 | Opcode  | Operand 1 | Operand 2 | Operand 3 | Summary
 | LOAD    | Register 2+| Number to Load       | Combines the second and third operand fields into a u16 which is then loaded into the register.
-| LOADM   | Register  | Address   | Unused    | Loads 32 bits from the heap starting at the offset supplied in the register
+| LOADM   | Register  | Register  | Unused    | Loads 32 bits from the heap into the first register starting at the offset supplied in the second register
 | ADD     | Register  | Register  | Register  | Adds the contents of registers specified in operand 1 and 2 and places the result in register 3.
 | SUB     | Register  | Register  | Register  | Subtracts register 2 from register 1 and places the result in register 3
 | MUL     | Register  | Register  | Register  | Multiplies the contents of registers specified in operand 1 and 2 and places the result in register 3.
@@ -121,7 +121,8 @@ The first byte of a 4-byte wide instruction is the Opcode. The following Opcodes
 | INC     | Register  2+| Unused              | Increments the number in the register by 1
 | DEC     | Register  2+| Unused              | Decrements the number in the register by 1
 | DJMPE 2+| Destination | Unused              | Direct jump to the value specified _in the assembly_ if the VM's equal_flag is true. Does not use registers.
-| PRTS  2+| Offset      | Unused              | Takes an offset into the read-only section and prints a string that starts at that offset
+| PRTS  2+| Offset   | Unused                 | Takes an offset into the read-only section and prints a string that starts at that offset
+| SETM    | Register | Register | Unused      | Takes an offset into the heap in the first register and writes the data in the second register to it
 |=========================================================================
 
 == 4.0 Shell Environment

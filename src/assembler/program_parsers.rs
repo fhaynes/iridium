@@ -1,5 +1,5 @@
 use assembler::directive_parsers::directive;
-use assembler::instruction_parsers::{AssemblerInstruction, instruction};
+use assembler::instruction_parsers::{instruction, AssemblerInstruction};
 use assembler::SymbolTable;
 use nom::types::CompleteStr;
 
@@ -62,7 +62,6 @@ mod tests {
         assert_eq!(result.is_ok(), true);
     }
 
-
     #[test]
     fn test_parse_load_greater_than_i16() {
         let mut test_assembler = Assembler::new();
@@ -72,7 +71,6 @@ mod tests {
         let result = result.unwrap();
         test_vm.program = result;
         test_vm.run();
-
     }
 
     #[test]
@@ -84,6 +82,5 @@ mod tests {
         let result = result.unwrap();
         test_vm.program = result;
         test_vm.run();
-
     }
 }

@@ -19,8 +19,8 @@ named!(pub register <CompleteStr, Token>,
 mod tests {
     #![allow(unused_imports)]
 
-    use nom::types::CompleteStr;
     use super::register;
+    use nom::types::CompleteStr;
 
     #[test]
     fn test_parse_register() {

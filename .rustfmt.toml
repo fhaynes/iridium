@@ -1,2 +1,1 @@
-indent_style = "Block"
-reorder_imports = false
+reorder_imports = true

@@ -1,5 +1,5 @@
 use std::thread;
-use vm::{VM, VMEvent};
+use vm::{VMEvent, VM};
 
 #[derive(Default)]
 pub struct Scheduler {

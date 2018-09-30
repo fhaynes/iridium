@@ -1,5 +1,5 @@
-use nom::types::CompleteStr;
 use assembler::Token;
+use nom::types::CompleteStr;
 
 /// Looks for a comment start
 /// Examples:

@@ -1,8 +1,8 @@
+use repl;
 use std::io::{BufRead, Write};
 use std::io::{BufReader, BufWriter};
 use std::net::TcpStream;
 use std::thread;
-use repl;
 
 pub struct Client {
     reader: BufReader<TcpStream>,
@@ -22,23 +22,19 @@ impl Client {
             reader: BufReader::new(reader),
             writer: BufWriter::new(writer),
             raw_stream: stream,
-            repl
+            repl,
         }
     }
 
     fn w(&mut self, msg: &str) -> bool {
         match self.writer.write_all(msg.as_bytes()) {
-            Ok(_) => {
-                match self.writer.flush() {
-                    Ok(_) => {
-                        true
-                    }
-                    Err(e) => {
-                        println!("Error flushing to client: {}", e);
-                        false
-                    }
+            Ok(_) => match self.writer.flush() {
+                Ok(_) => true,
+                Err(e) => {
+                    println!("Error flushing to client: {}", e);
+                    false
                 }
-            }
+            },
             Err(e) => {
                 println!("Error writing to client: {}", e);
                 false
@@ -56,16 +52,14 @@ impl Client {
                 match chan.recv() {
                     Ok(msg) => {
                         match writer.write_all(msg.as_bytes()) {
-                            Ok(_) => {},
-                            Err(_e) => {
-
-                            }
+                            Ok(_) => {}
+                            Err(_e) => {}
                         };
                         match writer.flush() {
-                            Ok(_) => {},
+                            Ok(_) => {}
                             Err(_e) => {}
                         }
-                    },
+                    }
                     Err(_e) => {}
                 }
             }

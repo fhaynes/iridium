@@ -1,10 +1,10 @@
-use byteorder::{WriteBytesExt, LittleEndian};
+use byteorder::{LittleEndian, WriteBytesExt};
 use nom::types::CompleteStr;
 
+use assembler::comment_parsers::comment;
 use assembler::label_parsers::label_declaration;
 use assembler::opcode_parsers::*;
 use assembler::operand_parsers::operand;
-use assembler::comment_parsers::comment;
 use assembler::{SymbolTable, Token};
 
 const MAX_I16: i32 = 32768;
@@ -130,7 +130,6 @@ impl AssemblerInstruction {
                     results.push(register);
                     results.push(wtr[1]);
                     results.push(wtr[0]);
-
                 } else {
                     let mut wtr = vec![];
                     wtr.write_i32::<LittleEndian>(*value).unwrap();
@@ -320,7 +319,9 @@ mod tests {
             Ok((
                 CompleteStr(""),
                 AssemblerInstruction {
-                    opcode: Some(Token::Op { code: Opcode::CLOOP }),
+                    opcode: Some(Token::Op {
+                        code: Opcode::CLOOP
+                    }),
                     label: None,
                     directive: None,
                     operand1: Some(Token::IntegerOperand { value: 10 }),

@@ -1,7 +1,7 @@
 use assembler::Token;
 use instruction::Opcode;
-use nom::*;
 use nom::types::CompleteStr;
+use nom::*;
 
 named!(pub opcode<CompleteStr, Token>,
   do_parse!(
@@ -17,10 +17,10 @@ named!(pub opcode<CompleteStr, Token>,
 mod tests {
     #![allow(unused_imports)]
 
+    use super::opcode;
     use assembler::Token;
     use instruction::Opcode;
     use nom::types::CompleteStr;
-    use super::opcode;
 
     #[test]
     fn test_opcode() {

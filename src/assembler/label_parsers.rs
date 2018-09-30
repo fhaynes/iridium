@@ -1,6 +1,6 @@
 use assembler::Token;
-use nom::{alphanumeric, multispace};
 use nom::types::CompleteStr;
+use nom::{alphanumeric, multispace};
 
 /// Looks for a user-defined label, such as `label1:`
 named!(pub label_declaration<CompleteStr, Token>,
