@@ -45,8 +45,59 @@ pub enum Opcode {
     XOR,
     NOT,
     LUI,
+    CLOOP,
+    LOOP,
 }
 
+impl From<Opcode> for u8 {
+    fn from(op: Opcode) -> Self {
+        match op {
+            Opcode::LOAD => 0,
+            Opcode::ADD => 1,
+            Opcode::SUB => 2,
+            Opcode::MUL => 3,
+            Opcode::DIV => 4,
+            Opcode::HLT => 5,
+            Opcode::JMP => 6,
+            Opcode::JMPF => 7,
+            Opcode::JMPB => 8,
+            Opcode::EQ => 9,
+            Opcode::NEQ => 10,
+            Opcode::GTE => 11,
+            Opcode::LTE => 12,
+            Opcode::LT => 13,
+            Opcode::GT => 14,
+            Opcode::JMPE => 15,
+            Opcode::NOP => 16,
+            Opcode::ALOC => 17,
+            Opcode::INC => 18,
+            Opcode::DEC => 19,
+            Opcode::DJMPE => 20,
+            Opcode::PRTS => 21,
+            Opcode::LOADF64 => 22,
+            Opcode::ADDF64 => 23,
+            Opcode::SUBF64 => 24,
+            Opcode::MULF64 => 25,
+            Opcode::DIVF64 => 26,
+            Opcode::EQF64 => 27,
+            Opcode::NEQF64 => 28,
+            Opcode::GTF64 => 29,
+            Opcode::GTEF64 => 30,
+            Opcode::LTF64 => 31,
+            Opcode::LTEF64 => 32,
+            Opcode::SHL => 33,
+            Opcode::SHR => 34,
+            Opcode::AND => 35,
+            Opcode::OR => 36,
+            Opcode::XOR => 37,
+            Opcode::NOT => 38,
+            Opcode::LUI => 39,
+            Opcode::CLOOP => 40,
+            Opcode::LOOP => 41,
+            Opcode::IGL => 100,
+        }
+    }
+}
 /// We implement this trait to make it easy to convert from a u8 to an Opcode
 impl From<u8> for Opcode {
     fn from(v: u8) -> Self {
@@ -91,6 +142,8 @@ impl From<u8> for Opcode {
             37 => Opcode::XOR,
             38 => Opcode::NOT,
             39 => Opcode::LUI,
+            40 => Opcode::CLOOP,
+            41 => Opcode::LOOP,
             _ => Opcode::IGL,
         }
     }
@@ -141,6 +194,8 @@ impl<'a> From<CompleteStr<'a>> for Opcode {
             CompleteStr("xor") => Opcode::XOR,
             CompleteStr("not") => Opcode::NOT,
             CompleteStr("lui") => Opcode::LUI,
+            CompleteStr("cloop") => Opcode::CLOOP,
+            CompleteStr("loop") => Opcode::LOOP,
             _ => Opcode::IGL,
         }
     }
@@ -183,5 +238,15 @@ mod tests {
         assert_eq!(opcode, Opcode::LOAD);
         let opcode = Opcode::from(CompleteStr("illegal"));
         assert_eq!(opcode, Opcode::IGL);
+        let opcode = Opcode::from(CompleteStr("CLOOP"));
+        assert_eq!(opcode, Opcode::CLOOP);
+        let opcode = Opcode::from(CompleteStr("loop"));
+        assert_eq!(opcode, Opcode::LOOP);
+    }
+
+    #[test]
+    fn test_int_to_opcode() {
+        let opcode = Opcode::from(41);
+        assert_eq!(opcode, Opcode::LOOP);
     }
 }

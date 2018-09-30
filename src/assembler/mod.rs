@@ -98,6 +98,7 @@ impl Assembler {
                 }
                 // Run the second pass, which translates opcodes and associated operands into the bytecode
                 let mut body = self.process_second_phase(&program);
+                println!("Program is: {:#?}", body);
 
                 // Get the header so we can smush it into the bytecode letter
                 let mut assembled_program = self.write_pie_header();
@@ -136,6 +137,7 @@ impl Assembler {
             if i.is_directive() {
                 self.process_directive(i);
             }
+
             // This is used to keep track of which instruction we hit an error on
             self.current_instruction += 1;
         }
@@ -149,15 +151,21 @@ impl Assembler {
         let mut program = vec![];
         // Same as in first pass, except in the second pass we care about opcodes and directives
         for i in &p.instructions {
+            if i.is_directive() {
+                continue;
+            }
             if i.is_opcode() {
                 // Opcodes know how to properly transform themselves into 32-bits, so we can just call `to_bytes` and append to our program
+                if let Some(ref label_dec) = i.label {
+                    match label_dec {
+                        Token::LabelDeclaration{ ref name } => {
+                            self.symbols.set_symbol_offset(name, self.current_instruction * 4);
+                        },
+                        _ => {}
+                    }
+                }
                 let mut bytes = i.to_bytes(&self.symbols);
                 program.append(&mut bytes);
-            }
-            if i.is_directive() {
-                // In this phase, we can have directives but of different types than we care about in the first pass. The Directive itself can check which pass the Assembler
-                // is in and decide what to do about it
-                self.process_directive(i);
             }
             self.current_instruction += 1
         }
@@ -167,7 +175,9 @@ impl Assembler {
     fn process_label_declaration(&mut self, i: &AssemblerInstruction) {
         // Check if the label is None or String
         let name = match i.get_label_name() {
-            Some(name) => name,
+            Some(name) => {
+                name
+            },
             None => {
                 self.errors
                     .push(AssemblerError::StringConstantDeclaredWithoutLabel {
@@ -274,7 +284,7 @@ impl Assembler {
                     }
                     None => {
                         // This would be someone typing:
-                        // .i32 50
+                        // .integer 50
                         println!("Found a string constant with no associated label!");
                         return;
                     }
