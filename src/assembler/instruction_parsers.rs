@@ -116,7 +116,6 @@ impl AssemblerInstruction {
             // If the user wants to store a 32-bit register, we need to convert the number into bits, and then use two instructions to
             // get the entire value into the register
             Token::IntegerOperand { value } => {
-
                 if *value > MAX_I16 || *value < MIN_I16 {
                     // This creates the second instructino that loads the second group of 16 bits
                     let mut wtr = vec![];
@@ -135,16 +134,18 @@ impl AssemblerInstruction {
                 } else {
                     let mut wtr = vec![];
                     wtr.write_i32::<LittleEndian>(*value).unwrap();
-                    results.push(wtr[0]);
                     results.push(wtr[1]);
+                    results.push(wtr[0]);
                 }
             }
             Token::LabelUsage { name } => {
                 if let Some(value) = symbols.symbol_value(name) {
-                    let byte1 = value >> 8;
-                    let byte2 = value >> 8;
-                    results.push(byte2 as u8);
-                    results.push(byte1 as u8);
+                    let mut wtr = vec![];
+                    wtr.write_u32::<LittleEndian>(value).unwrap();
+                    results.push(wtr[1]);
+                    results.push(wtr[0]);
+                } else {
+                    println!("No value found for {:?}", name);
                 }
             }
             _ => {

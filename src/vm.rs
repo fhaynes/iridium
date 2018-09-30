@@ -42,6 +42,7 @@ pub struct VM {
     remainder: usize,
     /// Contains the result of the last comparison operation
     equal_flag: bool,
+    /// Loop counter field, used with the `LOOP` instruction
     loop_counter: usize,
     /// Contains the read-only section data
     ro_data: Vec<u8>,
@@ -384,16 +385,18 @@ impl VM {
                 self.registers[register] = value;
             }
             Opcode::LOOP => {
+                println!("Loop counter is: {:?}", self.loop_counter);
                 if self.loop_counter != 0 {
                     self.loop_counter -= 1;
                     let target = self.next_16_bits();
-                    println!("Target is: {:#?}", target);
+                    self.next_8_bits();
                 } else {
                     self.pc += 3;
                 }
             }
             Opcode::CLOOP => {
                 let loop_count = self.next_16_bits();
+                println!("Loop count: {:?}", loop_count);
                 self.loop_counter = loop_count as usize;
                 self.next_8_bits();
             }

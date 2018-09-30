@@ -71,6 +71,7 @@ fn main() {
                 Ok(p) => {
                     vm.add_bytes(p);
                     let events = vm.run();
+                    println!("{:#?}", vm.registers);
                     std::process::exit(0);
                 }
                 Err(_e) => {}
