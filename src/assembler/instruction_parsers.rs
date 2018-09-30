@@ -1,6 +1,4 @@
-use std::io::Cursor;
-
-use byteorder::{ReadBytesExt, WriteBytesExt, BigEndian, LittleEndian, ByteOrder};
+use byteorder::{WriteBytesExt, LittleEndian};
 use nom::types::CompleteStr;
 
 use assembler::label_parsers::label_declaration;
@@ -8,7 +6,6 @@ use assembler::opcode_parsers::*;
 use assembler::operand_parsers::operand;
 use assembler::comment_parsers::comment;
 use assembler::{SymbolTable, Token};
-use instruction::Opcode;
 
 const MAX_I16: i32 = 32768;
 const MIN_I16: i32 = -32768;
@@ -25,12 +22,13 @@ pub struct AssemblerInstruction {
 
 impl AssemblerInstruction {
     pub fn to_bytes(&self, symbols: &SymbolTable) -> Vec<u8> {
-        let mut results = vec![];
+        let mut results: Vec<u8> = vec![];
         if let Some(ref token) = self.opcode {
             match token {
                 Token::Op { code } => match code {
                     _ => {
-                        results.push(*code as u8);
+                        let b: u8 = (*code).into();
+                        results.push(b);
                     }
                 },
                 _ => {
@@ -134,18 +132,20 @@ impl AssemblerInstruction {
                     results.push(wtr[0]);
 
                 } else {
-                    let byte1 = value >> 8;
-                    let byte2 = value >> 8;
-                    results.push(byte2 as u8);
-                    results.push(byte1 as u8);
+                    let mut wtr = vec![];
+                    wtr.write_i32::<LittleEndian>(*value).unwrap();
+                    results.push(wtr[1]);
+                    results.push(wtr[0]);
                 }
             }
             Token::LabelUsage { name } => {
                 if let Some(value) = symbols.symbol_value(name) {
-                    let byte1 = value >> 8;
-                    let byte2 = value >> 8;
-                    results.push(byte2 as u8);
-                    results.push(byte1 as u8);
+                    let mut wtr = vec![];
+                    wtr.write_u32::<LittleEndian>(value).unwrap();
+                    results.push(wtr[1]);
+                    results.push(wtr[0]);
+                } else {
+                    println!("No value found for {:?}", name);
                 }
             }
             _ => {
@@ -160,12 +160,12 @@ named!(instruction_combined<CompleteStr, AssemblerInstruction>,
         opt!(comment) >>
         l: opt!(label_declaration) >>
         o: opcode >>
-        opt!(comment) >>
         o1: opt!(operand) >>
         o2: opt!(operand) >>
         o3: opt!(operand) >>
         opt!(comment) >>
         (
+            {
             AssemblerInstruction{
                 opcode: Some(o),
                 label: l,
@@ -173,6 +173,7 @@ named!(instruction_combined<CompleteStr, AssemblerInstruction>,
                 operand1: o1,
                 operand2: o2,
                 operand3: o3,
+            }
             }
         )
     )
@@ -306,6 +307,25 @@ mod tests {
                     operand1: Some(Token::Register { reg_num: 0 }),
                     operand2: Some(Token::Register { reg_num: 1 }),
                     operand3: Some(Token::Register { reg_num: 2 }),
+                }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_parse_cloop() {
+        let result = instruction_combined(CompleteStr("cloop #10\n"));
+        assert_eq!(
+            result,
+            Ok((
+                CompleteStr(""),
+                AssemblerInstruction {
+                    opcode: Some(Token::Op { code: Opcode::CLOOP }),
+                    label: None,
+                    directive: None,
+                    operand1: Some(Token::IntegerOperand { value: 10 }),
+                    operand2: None,
+                    operand3: None
                 }
             ))
         );

@@ -1,0 +1,6 @@
+.data
+.code
+cloop #10
+load $1 #20
+test: inc $1
+loop @test

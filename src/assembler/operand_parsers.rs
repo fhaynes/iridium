@@ -27,6 +27,8 @@ named!(integer_operand<CompleteStr, Token>,
     )
 );
 
+/// Parser for all floats, which have to be prefaced with `#` in our assembly language:
+/// #100.0
 named!(float_operand<CompleteStr, Token>,
     ws!(
         do_parse!(
