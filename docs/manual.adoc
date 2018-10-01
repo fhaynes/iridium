@@ -143,7 +143,7 @@ Iridium has two opcodes related to functions: CALL and RETURN. This section desc
 The entity invoking `CALL` is referred to as the `caller`, and the invoked code is referred to as the `callee`.
 
 ==== 5.1 Call
-`CALL` differs from `JMP` in that when `CALL` is invoked, the address of the next instruction is pushed onto the stack.
+`CALL` differs from `JMP` in that when `CALL` is invoked, arguments from dedicated registers are automatically saved to the stack along with the address of the next instruction. The designated registers for passing arguments are 0-3.
 
 ==== 5.2 Return
 When the code hits a `RET` instruction, the most recent return address is popped off the stack, and the program counter is set to its value.

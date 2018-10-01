@@ -437,6 +437,12 @@ impl VM {
                 let data = LittleEndian::read_i32(&buf);
                 self.registers[target_register] = data;
             }
+            Opcode::CALL => {
+
+            }
+            Opcode::RET => {
+
+            }
         };
         None
     }
@@ -964,6 +970,7 @@ mod tests {
         test_vm.run_once();
         assert_eq!(test_vm.stack, vec![10, 0, 0, 0]);
     }
+
     #[test]
     fn test_pop_opcode() {
         let mut test_vm = VM::new();

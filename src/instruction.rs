@@ -50,6 +50,8 @@ pub enum Opcode {
     SETM,
     PUSH,
     POP,
+    CALL,
+    RET,
 }
 
 impl From<Opcode> for u8 {
@@ -101,6 +103,8 @@ impl From<Opcode> for u8 {
             Opcode::SETM => 43,
             Opcode::PUSH => 44,
             Opcode::POP => 45,
+            Opcode::CALL => 46,
+            Opcode::RET => 47,
             Opcode::IGL => 100,
         }
     }
@@ -155,6 +159,8 @@ impl From<u8> for Opcode {
             43 => Opcode::SETM,
             44 => Opcode::PUSH,
             45 => Opcode::POP,
+            46 => Opcode::CALL,
+            47 => Opcode::RET,
             _ => Opcode::IGL,
         }
     }
