@@ -1,3 +1,5 @@
+use std::fmt;
+
 use byteorder::{LittleEndian, WriteBytesExt};
 use nom::types::CompleteStr;
 
@@ -144,13 +146,19 @@ impl AssemblerInstruction {
                     results.push(wtr[1]);
                     results.push(wtr[0]);
                 } else {
-                    println!("No value found for {:?}", name);
+                    error!("No value found for {:?}", name);
                 }
             }
             _ => {
-                println!("Opcode found in operand field: {:#?}", t);
+                error!("Opcode found in operand field: {:#?}", t);
             }
         };
+    }
+}
+
+impl fmt::Display for AssemblerInstruction {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "(Label: {:?} Opcode: {:?} Directive: {:?} Operand #1: {:?} Operand #2: {:?} Operand #3: {:?})", self.label, self.opcode, self.directive, self.operand1, self.operand2, self.operand3)
     }
 }
 

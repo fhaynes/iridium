@@ -1,0 +1,7 @@
+.data
+.code
+LOAD $0 #400
+CALL @test
+HLT
+test: LOAD $0 #500
+RET
