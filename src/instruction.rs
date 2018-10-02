@@ -217,6 +217,8 @@ impl<'a> From<CompleteStr<'a>> for Opcode {
             CompleteStr("setm") => Opcode::SETM,
             CompleteStr("push") => Opcode::PUSH,
             CompleteStr("pop") => Opcode::POP,
+            CompleteStr("call") => Opcode::CALL,
+            CompleteStr("ret") => Opcode::RET,
             _ => Opcode::IGL,
         }
     }

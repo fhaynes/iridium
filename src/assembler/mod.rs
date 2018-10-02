@@ -9,8 +9,11 @@ pub mod program_parsers;
 pub mod register_parsers;
 pub mod symbols;
 
+use std::fmt;
+
 use byteorder::{LittleEndian, WriteBytesExt};
 use nom::types::CompleteStr;
+use log;
 
 use assembler::assembler_errors::AssemblerError;
 use assembler::instruction_parsers::AssemblerInstruction;
@@ -21,8 +24,7 @@ use instruction::Opcode;
 /// Magic number that begins every bytecode file prefix. These spell out EPIE in ASCII, if you were wondering.
 pub const PIE_HEADER_PREFIX: [u8; 4] = [0x45, 0x50, 0x49, 0x45];
 
-/// Constant that determines how long the header is. There are 60 zeros left after the prefix, for later
-/// usage if needed.
+/// Constant that determines how long the header is. There are 60 zeros left after the prefix, for later usage if needed.
 pub const PIE_HEADER_LENGTH: usize = 64;
 
 #[derive(Debug, PartialEq)]
@@ -85,31 +87,34 @@ impl Assembler {
                 self.process_first_phase(&program);
                 if !self.errors.is_empty() {
                     // TODO: Can we avoid a clone here?
+                    error!("Errors were found in the first parsing phase: {:?}", self.errors);
                     return Err(self.errors.clone());
                 };
-
+                debug!("First parsing phase complete");
+                debug!("Phase 1 program: {:#?}", program);
                 // Make sure that we have at least one data section and one code section
                 if self.sections.len() != 2 {
                     // TODO: Detail out which one(s) are missing
-                    println!("Did not find at least two sections.");
+                    error!("Did not find at least two sections.");
                     self.errors.push(AssemblerError::InsufficientSections);
                     // TODO: Can we avoid a clone here?
                     return Err(self.errors.clone());
                 }
                 // Run the second pass, which translates opcodes and associated operands into the bytecode
                 let mut body = self.process_second_phase(&program);
-                println!("Program is: {:#?}", body);
-
+                debug!("Phase 2 program: {:#?}", program);
                 // Get the header so we can smush it into the bytecode letter
                 let mut assembled_program = self.write_pie_header();
+                debug!("Length of header is: {}", assembled_program.len());
 
                 // Merge the header with the populated body vector
                 assembled_program.append(&mut body);
+                debug!("Complete program is: {:#?}", assembled_program);
                 Ok(assembled_program)
             }
             // If there were parsing errors, bad syntax, etc, this arm is run
             Err(e) => {
-                println!("There was an error parsing the code: {:?}", e);
+                error!("There was an error parsing the code: {:?}", e);
                 Err(vec![AssemblerError::ParseError {
                     error: e.to_string(),
                 }])
@@ -119,15 +124,19 @@ impl Assembler {
 
     /// Runs the first pass of the two-pass assembling process. It looks for labels and puts them in the symbol table
     fn process_first_phase(&mut self, p: &Program) {
+        info!("Beginning first parsing phase");
         // Iterate over every instruction, even though in the first phase we only care about labels and directives
         for i in &p.instructions {
+            debug!("Parsing instruction: {}", i);
             if i.is_label() {
                 // TODO: Factor this out into another function? Put it in `process_label_declaration` maybe?
                 if self.current_section.is_some() {
                     // If we have hit a segment header already (e.g., `.code`) then we are ok
+                    debug!("Parsing label declaration in first phase: {:?} with offset {:?}", i.get_label_name(), self.current_instruction * 4);
                     self.process_label_declaration(&i);
                 } else {
                     // If we have *not* hit a segment header yet, then we have a label outside of a segment, which is not allowed
+                    error!("Label found outside of a section in first phase: {:?}", i.get_label_name());
                     self.errors.push(AssemblerError::NoSegmentDeclarationFound {
                         instruction: self.current_instruction,
                     });
@@ -146,25 +155,30 @@ impl Assembler {
 
     /// Runs the second pass of the assembler
     fn process_second_phase(&mut self, p: &Program) -> Vec<u8> {
+        info!("Beginning second parsing phase");
         self.current_instruction = 0;
         // We're going to put the bytecode meant to be executed in a separate Vec so we can do some post-processing and then merge it with the header and read-only sections
         let mut program = vec![];
         // Same as in first pass, except in the second pass we care about opcodes and directives
         for i in &p.instructions {
             if i.is_directive() {
+                debug!("Found a directive in second phase {:?}, bypassing", i.directive);
                 continue;
             }
             if i.is_opcode() {
                 // Opcodes know how to properly transform themselves into 32-bits, so we can just call `to_bytes` and append to our program
-                if let Some(ref label_dec) = i.label {
-                    match label_dec {
-                        Token::LabelDeclaration { ref name } => {
-                            self.symbols
-                                .set_symbol_offset(name, self.current_instruction * 4);
-                        }
-                        _ => {}
-                    }
-                }
+                // if let Some(ref label_dec) = i.label {
+                //     match label_dec {
+                //         Token::LabelDeclaration { ref name } => {
+                //             debug!("Processing label declaration in second phase: {:?} with offset: {:?}", i.label, self.current_instruction * 4);
+                //             self.symbols
+                //                 .set_symbol_offset(name, self.current_instruction * 4);
+                //         }
+                //         _ => {
+                //             debug!("Opcode has an unknown token: {:?}", label_dec);
+                //         }
+                //     }
+                // }
                 let mut bytes = i.to_bytes(&self.symbols);
                 program.append(&mut bytes);
             }
@@ -186,6 +200,7 @@ impl Assembler {
             }
         };
 
+        debug!("Found label declaration: {} on line {}", name, self.current_instruction);
         // Check if label is already in use (has an entry in the symbol table)
         // TODO: Is there a cleaner way to do this?
         if self.symbols.has_symbol(&name) {
@@ -194,7 +209,8 @@ impl Assembler {
         }
 
         // If we make it here, it isn't a symbol we've seen before, so stick it in the table
-        let symbol = Symbol::new(name, SymbolType::Label);
+        let symbol = Symbol::new_with_offset(name, SymbolType::Label, (self.current_instruction * 4) + 60);
+        debug!("Added new symbol to table: {:?} with offset {:?}", symbol, (self.current_instruction * 4) + 60);
         self.symbols.add_symbol(symbol);
     }
 
@@ -306,7 +322,7 @@ impl Assembler {
     /// Handles a declaration of a section header, such as:
     /// .code
     fn process_section_header(&mut self, header_name: &str) {
-        let new_section: AssemblerSection = header_name.into();
+        let mut new_section: AssemblerSection = header_name.into();
         // Only specific section names are allowed
         if new_section == AssemblerSection::Unknown {
             println!(
@@ -315,6 +331,21 @@ impl Assembler {
             );
             return;
         }
+
+        match new_section {
+            AssemblerSection::Code{ref mut starting_instruction} => {
+                debug!("Code section starts at: {}", self.current_instruction);
+                *starting_instruction = Some(self.current_instruction.clone())
+            }
+            AssemblerSection::Data{ref mut starting_instruction} => {
+                debug!("Data section starts at: {}", self.current_instruction);
+                *starting_instruction = Some(self.current_instruction.clone())
+            }
+            AssemblerSection::Unknown => {
+                error!("Found a section header that is unknown: {:?}", new_section)
+            }
+        };
+
         // TODO: Check if we really need to keep a list of all sections seen
         self.sections.push(new_section.clone());
         self.current_section = Some(new_section);
@@ -327,15 +358,15 @@ impl Assembler {
             header.push(byte.clone());
         }
 
-        // Now we need to calculate the starting offset so that the VM knows where the RO section ends
-        let mut wtr: Vec<u8> = vec![];
-        wtr.write_u32::<LittleEndian>(self.ro.len() as u32).unwrap();
-        header.append(&mut wtr);
-
         // Now pad the rest of the bytecode header
         while header.len() < PIE_HEADER_LENGTH {
             header.push(0 as u8);
         }
+
+        // Now we need to calculate the starting offset so that the VM knows where the RO section ends
+        let mut wtr: Vec<u8> = vec![];
+        wtr.write_u32::<LittleEndian>(self.ro.len() as u32).unwrap();
+        header.append(&mut wtr);
 
         header
     }
@@ -402,9 +433,9 @@ mod tests {
         ";
         let program = asm.assemble(test_string).unwrap();
         let mut vm = VM::new();
-        assert_eq!(program.len(), 92);
+        assert_eq!(program.len(), 96);
         vm.add_bytes(program);
-        assert_eq!(vm.program.len(), 92);
+        assert_eq!(vm.program.len(), 96);
     }
 
     #[test]
@@ -426,7 +457,7 @@ mod tests {
         let program = asm.assemble(test_string);
         assert_eq!(program.is_ok(), true);
         let unwrapped = program.unwrap();
-        assert_eq!(unwrapped[4], 6);
+        assert_eq!(unwrapped[64], 6);
     }
 
     #[test]
