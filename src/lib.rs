@@ -13,3 +13,4 @@ pub mod remote;
 pub mod repl;
 pub mod scheduler;
 pub mod vm;
+pub mod cluster;
