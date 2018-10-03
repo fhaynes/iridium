@@ -31,11 +31,28 @@ args:
         takes_value: true
         long: bind-host
         short: h
+    - SERVER_LISTEN_PORT:
+        help: Which port Iridium should listen for remote connections on from other Iridium VMs. Defaults to 2254.
+        required: false
+        takes_value: true
+        long: server-bind-port
+        short: P
+    - SERVER_LISTEN_HOST:
+        help: Which address Iridium should listen for remote connections on from other Iridium VMs. Defaults to "127.0.0.1".
+        required: false
+        takes_value: true
+        long: server-bind-host
+        short: H
     - DATA_ROOT_DIR:
         help: Root directory where the Iridium VM should store its data. Defaults to /var/lib/iridium.
         required: false
         takes_value: true
         long: data-root-dir
+    - NODE_ALIAS:
+        help: An alias that can be used to refer to a running VM across a network
+        required: false
+        takes_value: true
+        long: node-alias
 subcommands:
     - add-ssh-key:
         about: Adds a public key to the list of keys authorized to access this VM remotely

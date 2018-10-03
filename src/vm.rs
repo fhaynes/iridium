@@ -1,4 +1,6 @@
 use std;
+use std::thread;
+use std::net::{SocketAddr};
 use std::io::Cursor;
 
 use byteorder::*;
@@ -7,6 +9,7 @@ use num_cpus;
 use uuid::Uuid;
 
 use assembler::{PIE_HEADER_LENGTH, PIE_HEADER_PREFIX, Assembler};
+use cluster;
 use instruction::Opcode;
 use std::f64::EPSILON;
 
@@ -42,10 +45,12 @@ pub struct VM {
     pub registers: [i32; 32],
     /// Array that simulates having floating point hardware registers
     pub float_registers: [f64; 32],
-    /// Program counter that tracks which byte is being executed
-    pc: usize,
     /// The bytecode of the program being run
     pub program: Vec<u8>,
+    /// Number of logical cores the system reports
+    pub logical_cores: usize,
+    /// Program counter that tracks which byte is being executed
+    pc: usize,
     /// Used for heap memory
     heap: Vec<u8>,
     /// Used to represent the stack
@@ -60,10 +65,15 @@ pub struct VM {
     ro_data: Vec<u8>,
     /// Is a unique, randomly generated UUID for identifying this VM
     id: Uuid,
+    /// An alias that can be specified by the user and used to refer to the Node
+    alias: Option<String>,
     /// Keeps a list of events for a particular VM
     events: Vec<VMEvent>,
-    /// Number of logical cores the system reports
-    pub logical_cores: usize,
+    // Server address that the VM will bind to for server-to-server communications
+    server_addr: Option<String>,
+    // Port the server will bind to for server-to-server communications
+    server_port: Option<String>
+
 }
 
 impl VM {
@@ -81,8 +91,11 @@ impl VM {
             remainder: 0,
             equal_flag: false,
             id: Uuid::new_v4(),
+            alias: None,
             events: Vec::new(),
             logical_cores: num_cpus::get(),
+            server_addr: None,
+            server_port: None,
         }
     }
 
@@ -118,6 +131,21 @@ impl VM {
             application_id: self.id,
         });
         self.events.clone()
+    }
+
+    pub fn with_alias(mut self, alias: String) -> Self {
+        if alias == "" {
+            self.alias = Some(alias)
+        } else {
+            self.alias = None
+        }
+        self
+    }
+
+    pub fn with_cluster_bind(mut self, server_addr: String, server_port: String) -> Self {
+        self.server_addr = Some(server_addr);
+        self.server_port = Some(server_port);
+        self
     }
 
     /// Executes one instruction. Meant to allow for more controlled execution of the VM
@@ -498,13 +526,30 @@ impl VM {
         prepension
     }
 
+    pub fn bind_cluster_server(&mut self) {
+        if let Some(ref addr) = self.server_addr {
+            if let Some(ref port) = self.server_port {
+                debug!("Binding to: {} {}", addr, port);
+                let socket_addr: SocketAddr = (addr.to_string() + ":" + port).parse().unwrap();
+                debug!("SocketAddr is: {:?}", socket_addr);
+                thread::spawn(move || {
+                    cluster::server::listen(socket_addr);
+                });
+            } else {
+                error!("Unable to bind to cluster server address: {}", addr);
+            }
+        } else {
+            error!("Unable to bind to cluster server port: {:?}", self.server_port);
+        }
+    }
+
     fn get_starting_offset(&self) -> usize {
         let mut rdr = Cursor::new(&self.program[64..68]);
         let starting_offset = rdr.read_u32::<LittleEndian>().unwrap() as usize;
         starting_offset
     }
 
-    /// Attempts to decode the byte the VM's program counter is pointing at into an opcode
+    // Attempts to decode the byte the VM's program counter is pointing at into an opcode
     fn decode_opcode(&mut self) -> Opcode {
         let opcode = Opcode::from(self.program[self.pc]);
         self.pc += 1;
@@ -517,21 +562,22 @@ impl VM {
         buf
     }
 
-    /// Attempts to decode the next byte into an opcode
+    // Attempts to decode the next byte into an opcode
     fn next_8_bits(&mut self) -> u8 {
         let result = self.program[self.pc];
         self.pc += 1;
         result
     }
 
-    /// Grabs the next 16 bits (2 bytes)
+    // Grabs the next 16 bits (2 bytes)
     fn next_16_bits(&mut self) -> u16 {
         let result =
             ((u16::from(self.program[self.pc])) << 8) | u16::from(self.program[self.pc + 1]);
         self.pc += 2;
         result
     }
-    /// Processes the header of bytecode the VM is asked to execute
+
+    // Processes the header of bytecode the VM is asked to execute
     fn verify_header(&self) -> bool {
         if self.program[0..4] != PIE_HEADER_PREFIX {
             return false;
