@@ -13,6 +13,7 @@ use nom::types::CompleteStr;
 
 use assembler::program_parsers::program;
 use assembler::Assembler;
+use cluster;
 use repl::command_parser::CommandParser;
 use scheduler::Scheduler;
 use vm::VM;
@@ -35,10 +36,10 @@ pub struct REPL {
 
 impl REPL {
     /// Creates and returns a new assembly REPL
-    pub fn new() -> REPL {
+    pub fn new(vm: VM) -> REPL {
         let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
         REPL {
-            vm: VM::new(),
+            vm: vm,
             command_buffer: vec![],
             asm: Assembler::new(),
             scheduler: Scheduler::new(),
@@ -119,7 +120,7 @@ impl REPL {
     pub fn send_message(&mut self, msg: String) {
         match &self.tx_pipe {
             Some(pipe) => {
-                match pipe.send(msg + "\n") {
+                match pipe.send(msg) {
                     Ok(_) => {}
                     Err(_e) => {}
                 };
@@ -198,6 +199,7 @@ impl REPL {
             "!symbols" => self.symbols(&args[1..]),
             "!load_file" => self.load_file(&args[1..]),
             "!spawn" => self.spawn(&args[1..]),
+            "!start_cluster" => self.start_cluster(&args[1..]),
             _ => {
                 self.send_message("Invalid command!".to_string());
                 self.send_prompt();
@@ -308,5 +310,10 @@ impl REPL {
         } else {
             return;
         }
+    }
+
+    fn start_cluster(&mut self, _args: &[&str]) {
+        debug!("Starting cluster server!");
+        self.vm.bind_cluster_server()
     }
 }
