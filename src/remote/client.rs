@@ -4,6 +4,8 @@ use std::io::{BufReader, BufWriter};
 use std::net::TcpStream;
 use std::thread;
 
+use vm::VM;
+
 pub struct Client {
     reader: BufReader<TcpStream>,
     writer: BufWriter<TcpStream>,
@@ -16,7 +18,8 @@ impl Client {
         // TODO: Handle this better
         let reader = stream.try_clone().unwrap();
         let writer = stream.try_clone().unwrap();
-        let repl = repl::REPL::new();
+        let vm = VM::new();
+        let repl = repl::REPL::new(vm);
 
         Client {
             reader: BufReader::new(reader),
