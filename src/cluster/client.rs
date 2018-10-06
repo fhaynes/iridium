@@ -5,7 +5,10 @@ use std::thread;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::{Receiver, Sender};
 
+use cluster::message::IridiumMessage;
+
 pub struct ClusterClient {
+    alias: Option<String>,
     reader: BufReader<TcpStream>,
     writer: BufWriter<TcpStream>,
     rx: Option<Receiver<String>>,
@@ -14,6 +17,7 @@ pub struct ClusterClient {
 }
 
 impl ClusterClient {
+    /// Creates and returns a new ClusterClient that wraps TcpStreams for communicating with it
     pub fn new(stream: TcpStream) -> ClusterClient {
         // TODO: Handle this better
         let reader = stream.try_clone().unwrap();
@@ -24,8 +28,16 @@ impl ClusterClient {
             writer: BufWriter::new(writer),
             raw_stream: stream,
             tx: Some(tx),
-            rx: Some(rx)
+            rx: Some(rx),
+            alias: None,
         }
+    }
+
+    pub fn send_hello(&self) {
+        if let Some(ref a) = self.alias {
+            let msg = IridiumMessage::Hello{alias: a.to_string()};
+        }
+
     }
 
     fn w(&mut self, msg: &str) -> bool {
@@ -66,7 +78,7 @@ impl ClusterClient {
         });
     }
 
-    pub fn run(&mut self) {
+    pub fn run(&mut self, mgr: Arc<RwLock<Manager>>) {
         self.recv_loop();
         let mut buf = String::new();
         loop {

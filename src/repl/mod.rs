@@ -6,18 +6,19 @@ use std::io;
 use std::io::{Read, Write};
 use std::num::ParseIntError;
 use std::path::Path;
-use std::sync::mpsc;
+use std::sync::{RwLock, Arc, mpsc};
 use std::sync::mpsc::{Receiver, Sender};
+use std::net::TcpStream;
 
 use nom::types::CompleteStr;
 
 use assembler::program_parsers::program;
 use assembler::Assembler;
 use cluster;
+use cluster::manager::Manager;
 use repl::command_parser::CommandParser;
 use scheduler::Scheduler;
 use vm::VM;
-
 const COMMAND_PREFIX: char = '!';
 
 pub static REMOTE_BANNER: &'static str = "Welcome to Iridium! Let's be productive!";
@@ -27,6 +28,7 @@ pub static PROMPT: &'static str = ">>> ";
 #[derive(Default)]
 pub struct REPL {
     command_buffer: Vec<String>,
+    connection_manager: Arc<RwLock<Manager>>,
     vm: VM,
     asm: Assembler,
     scheduler: Scheduler,
@@ -41,6 +43,7 @@ impl REPL {
         REPL {
             vm: vm,
             command_buffer: vec![],
+            connection_manager: Arc::new(RwLock::new(Manager::new())),
             asm: Assembler::new(),
             scheduler: Scheduler::new(),
             tx_pipe: Some(Box::new(tx)),
@@ -200,6 +203,8 @@ impl REPL {
             "!load_file" => self.load_file(&args[1..]),
             "!spawn" => self.spawn(&args[1..]),
             "!start_cluster" => self.start_cluster(&args[1..]),
+            "!join_cluster" => self.join_cluster(&args[1..]),
+            "!cluster_members" => self.cluster_members(&args[1..]),
             _ => {
                 self.send_message("Invalid command!".to_string());
                 self.send_prompt();
@@ -313,7 +318,32 @@ impl REPL {
     }
 
     fn start_cluster(&mut self, _args: &[&str]) {
-        debug!("Starting cluster server!");
-        self.vm.bind_cluster_server()
+        self.send_message(format!("Started cluster server!"));
+        self.vm.bind_cluster_server(self.connection_manager.clone());
     }
+
+    fn join_cluster(&mut self, args: &[&str]) {
+        self.send_message(format!("Attempting to join cluster..."));
+        let ip = args[0];
+        let port = args[1];
+        let addr = ip.to_owned() + ":" + port;
+        if let Ok(stream) = TcpStream::connect(addr) {
+            self.send_message(format!("Connected to cluster!"));
+            let cc = cluster::client::ClusterClient::new(stream);
+            if let Some(ref a) = self.vm.alias {
+                if let Ok(mut lock) = self.connection_manager.write() {
+                    lock.add_client(a.to_string(), cc);
+                }
+            }
+        } else {
+            self.send_message(format!("Could not connect to cluster!"));
+        }
+    }
+
+    fn cluster_members(&mut self, args: &[&str]) {
+        self.send_message(format!("Listing Known Nodes:"));
+        let cluster_members = self.connection_manager.read().unwrap().get_client_names();
+        self.send_message(format!("{:#?}", cluster_members));
+    }
+
 }

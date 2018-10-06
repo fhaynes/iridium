@@ -1,8 +1,10 @@
 use std::net::{TcpListener, SocketAddr};
 use std::thread;
-use cluster::client::ClusterClient;
 
-pub fn listen(addr: SocketAddr) {
+use cluster::client::ClusterClient;
+use cluster::manager::Manager;
+
+pub fn listen(addr: SocketAddr, mgr: Arc<RwLock<Manager>>) {
     info!("Initializing Cluster server...");
     let listener =
         TcpListener::bind(addr).unwrap();
@@ -11,7 +13,7 @@ pub fn listen(addr: SocketAddr) {
         let stream = stream.unwrap();
         thread::spawn(|| {
             let mut client = ClusterClient::new(stream);
-            client.run();
+            client.run(mgr);
         });
     }
 }

@@ -2,6 +2,7 @@ use std;
 use std::thread;
 use std::net::{SocketAddr};
 use std::io::Cursor;
+use std::sync::{Arc, RwLock};
 
 use byteorder::*;
 use chrono::prelude::*;
@@ -10,6 +11,7 @@ use uuid::Uuid;
 
 use assembler::{PIE_HEADER_LENGTH, PIE_HEADER_PREFIX, Assembler};
 use cluster;
+use cluster::manager::Manager;
 use instruction::Opcode;
 use std::f64::EPSILON;
 
@@ -49,6 +51,8 @@ pub struct VM {
     pub program: Vec<u8>,
     /// Number of logical cores the system reports
     pub logical_cores: usize,
+    /// An alias that can be specified by the user and used to refer to the Node
+    pub alias: Option<String>,
     /// Program counter that tracks which byte is being executed
     pc: usize,
     /// Used for heap memory
@@ -65,8 +69,6 @@ pub struct VM {
     ro_data: Vec<u8>,
     /// Is a unique, randomly generated UUID for identifying this VM
     id: Uuid,
-    /// An alias that can be specified by the user and used to refer to the Node
-    alias: Option<String>,
     /// Keeps a list of events for a particular VM
     events: Vec<VMEvent>,
     // Server address that the VM will bind to for server-to-server communications
@@ -526,14 +528,14 @@ impl VM {
         prepension
     }
 
-    pub fn bind_cluster_server(&mut self) {
+    pub fn bind_cluster_server(&mut self, mgr: Arc<RwLock<Manager>>) {
         if let Some(ref addr) = self.server_addr {
             if let Some(ref port) = self.server_port {
-                debug!("Binding to: {} {}", addr, port);
+                info!("Binding to: {} {}", addr, port);
                 let socket_addr: SocketAddr = (addr.to_string() + ":" + port).parse().unwrap();
-                debug!("SocketAddr is: {:?}", socket_addr);
+                info!("SocketAddr is: {:?}", socket_addr);
                 thread::spawn(move || {
-                    cluster::server::listen(socket_addr);
+                    cluster::server::listen(socket_addr, mgr);
                 });
             } else {
                 error!("Unable to bind to cluster server address: {}", addr);
