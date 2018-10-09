@@ -1,12 +1,15 @@
 use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
 
 use cluster::client::ClusterClient;
-use cluster::NodeAlias;
+use cluster::{NodeAlias, NodeCollection};
 
 #[derive(Default)]
 pub struct Manager {
-    clients: HashMap<NodeAlias, ClusterClient>
+    clients: NodeCollection
 }
+
+pub type ClientManager = Manager;
 
 impl Manager {
     pub fn new() -> Manager {

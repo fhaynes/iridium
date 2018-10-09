@@ -11,7 +11,7 @@ use uuid::Uuid;
 
 use assembler::{PIE_HEADER_LENGTH, PIE_HEADER_PREFIX, Assembler};
 use cluster;
-use cluster::manager::Manager;
+use cluster::manager::ClientManager;
 use instruction::Opcode;
 use std::f64::EPSILON;
 
@@ -528,14 +528,12 @@ impl VM {
         prepension
     }
 
-    pub fn bind_cluster_server(&mut self, mgr: Arc<RwLock<Manager>>) {
+    pub fn bind_cluster_server(&mut self) {
         if let Some(ref addr) = self.server_addr {
             if let Some(ref port) = self.server_port {
-                info!("Binding to: {} {}", addr, port);
                 let socket_addr: SocketAddr = (addr.to_string() + ":" + port).parse().unwrap();
-                info!("SocketAddr is: {:?}", socket_addr);
                 thread::spawn(move || {
-                    cluster::server::listen(socket_addr, mgr);
+                    cluster::server::listen(socket_addr);
                 });
             } else {
                 error!("Unable to bind to cluster server address: {}", addr);

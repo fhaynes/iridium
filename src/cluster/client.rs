@@ -2,10 +2,12 @@ use std::io::{BufRead, Write};
 use std::io::{BufReader, BufWriter};
 use std::net::TcpStream;
 use std::thread;
+use std::sync::{Arc, RwLock};
 use std::sync::mpsc::channel;
 use std::sync::mpsc::{Receiver, Sender};
 
 use cluster::message::IridiumMessage;
+use cluster::manager::ClientManager;
 
 pub struct ClusterClient {
     alias: Option<String>,
@@ -78,7 +80,7 @@ impl ClusterClient {
         });
     }
 
-    pub fn run(&mut self, mgr: Arc<RwLock<Manager>>) {
+    pub fn run(&mut self) {
         self.recv_loop();
         let mut buf = String::new();
         loop {

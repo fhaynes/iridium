@@ -319,7 +319,7 @@ impl REPL {
 
     fn start_cluster(&mut self, _args: &[&str]) {
         self.send_message(format!("Started cluster server!"));
-        self.vm.bind_cluster_server(self.connection_manager.clone());
+        self.vm.bind_cluster_server();
     }
 
     fn join_cluster(&mut self, args: &[&str]) {
