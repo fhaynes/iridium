@@ -9,8 +9,6 @@ pub struct Manager {
     clients: NodeCollection
 }
 
-pub type ClientManager = Manager;
-
 impl Manager {
     pub fn new() -> Manager {
         Manager {

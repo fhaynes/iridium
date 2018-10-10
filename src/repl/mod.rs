@@ -28,7 +28,6 @@ pub static PROMPT: &'static str = ">>> ";
 #[derive(Default)]
 pub struct REPL {
     command_buffer: Vec<String>,
-    connection_manager: Arc<RwLock<Manager>>,
     vm: VM,
     asm: Assembler,
     scheduler: Scheduler,
@@ -43,7 +42,6 @@ impl REPL {
         REPL {
             vm: vm,
             command_buffer: vec![],
-            connection_manager: Arc::new(RwLock::new(Manager::new())),
             asm: Assembler::new(),
             scheduler: Scheduler::new(),
             tx_pipe: Some(Box::new(tx)),
@@ -329,9 +327,10 @@ impl REPL {
         let addr = ip.to_owned() + ":" + port;
         if let Ok(stream) = TcpStream::connect(addr) {
             self.send_message(format!("Connected to cluster!"));
-            let cc = cluster::client::ClusterClient::new(stream);
+            let mut cc = cluster::client::ClusterClient::new(stream);
+            cc.send_hello();
             if let Some(ref a) = self.vm.alias {
-                if let Ok(mut lock) = self.connection_manager.write() {
+                if let Ok(mut lock) = self.vm.connection_manager.write() {
                     lock.add_client(a.to_string(), cc);
                 }
             }
@@ -342,7 +341,7 @@ impl REPL {
 
     fn cluster_members(&mut self, args: &[&str]) {
         self.send_message(format!("Listing Known Nodes:"));
-        let cluster_members = self.connection_manager.read().unwrap().get_client_names();
+        let cluster_members = self.vm.connection_manager.read().unwrap().get_client_names();
         self.send_message(format!("{:#?}", cluster_members));
     }
 

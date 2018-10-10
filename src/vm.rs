@@ -11,7 +11,7 @@ use uuid::Uuid;
 
 use assembler::{PIE_HEADER_LENGTH, PIE_HEADER_PREFIX, Assembler};
 use cluster;
-use cluster::manager::ClientManager;
+use cluster::manager::Manager;
 use instruction::Opcode;
 use std::f64::EPSILON;
 
@@ -53,6 +53,8 @@ pub struct VM {
     pub logical_cores: usize,
     /// An alias that can be specified by the user and used to refer to the Node
     pub alias: Option<String>,
+    /// Data structure to manage remote clients
+    pub connection_manager: Arc<RwLock<Manager>>,
     /// Program counter that tracks which byte is being executed
     pc: usize,
     /// Used for heap memory
@@ -88,6 +90,7 @@ impl VM {
             ro_data: vec![],
             heap: vec![0; DEFAULT_HEAP_STARTING_SIZE],
             stack: vec![],
+            connection_manager: Arc::new(RwLock::new(Manager::new())),
             pc: 0,
             loop_counter: 0,
             remainder: 0,
@@ -532,8 +535,9 @@ impl VM {
         if let Some(ref addr) = self.server_addr {
             if let Some(ref port) = self.server_port {
                 let socket_addr: SocketAddr = (addr.to_string() + ":" + port).parse().unwrap();
+                let clone = self.connection_manager.clone();
                 thread::spawn(move || {
-                    cluster::server::listen(socket_addr);
+                    cluster::server::listen(socket_addr, clone);
                 });
             } else {
                 error!("Unable to bind to cluster server address: {}", addr);
