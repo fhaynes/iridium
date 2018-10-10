@@ -2,18 +2,24 @@ use std::io::{BufRead, Write};
 use std::io::{BufReader, BufWriter};
 use std::net::TcpStream;
 use std::thread;
+use std::sync::{Arc, RwLock, Mutex};
 use std::sync::mpsc::channel;
 use std::sync::mpsc::{Receiver, Sender};
 
+use cluster::message::IridiumMessage;
+use cluster::manager::Manager;
+
 pub struct ClusterClient {
-    reader: BufReader<TcpStream>,
-    writer: BufWriter<TcpStream>,
-    rx: Option<Receiver<String>>,
-    tx: Option<Sender<String>>,
-    raw_stream: TcpStream,
+    alias: Option<String>,
+    pub reader: BufReader<TcpStream>,
+    pub writer: BufWriter<TcpStream>,
+    rx: Option<Arc<Mutex<Receiver<String>>>>,
+    tx: Option<Arc<Mutex<Sender<String>>>>,
+    pub raw_stream: TcpStream,
 }
 
 impl ClusterClient {
+    /// Creates and returns a new ClusterClient that wraps TcpStreams for communicating with it
     pub fn new(stream: TcpStream) -> ClusterClient {
         // TODO: Handle this better
         let reader = stream.try_clone().unwrap();
@@ -23,9 +29,16 @@ impl ClusterClient {
             reader: BufReader::new(reader),
             writer: BufWriter::new(writer),
             raw_stream: stream,
-            tx: Some(tx),
-            rx: Some(rx)
+            tx: Some(Arc::new(Mutex::new(tx))),
+            rx: Some(Arc::new(Mutex::new(rx))),
+            alias: None
         }
+    }
+
+    pub fn send_hello(&mut self) {
+        let alias = self.alias.clone();
+        let alias = alias.unwrap();
+        self.raw_stream.write(&alias.as_bytes());
     }
 
     fn w(&mut self, msg: &str) -> bool {
@@ -49,18 +62,20 @@ impl ClusterClient {
         let mut writer = self.raw_stream.try_clone().unwrap();
         let _t = thread::spawn(move || {
             loop {
-                match chan.recv() {
-                    Ok(msg) => {
-                        match writer.write_all(msg.as_bytes()) {
-                            Ok(_) => {}
-                            Err(_e) => {}
-                        };
-                        match writer.flush() {
-                            Ok(_) => {}
-                            Err(_e) => {}
+                if let Ok(locked_rx) = chan.lock() {
+                    match locked_rx.recv() {
+                        Ok(msg) => {
+                            match writer.write_all(msg.as_bytes()) {
+                                Ok(_) => {}
+                                Err(_e) => {}
+                            };
+                            match writer.flush() {
+                                Ok(_) => {}
+                                Err(_e) => {}
+                            };
                         }
+                        Err(_e) => {}
                     }
-                    Err(_e) => {}
                 }
             }
         });
