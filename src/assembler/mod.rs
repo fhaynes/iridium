@@ -355,13 +355,13 @@ impl Assembler {
                 ref mut starting_instruction,
             } => {
                 debug!("Code section starts at: {}", self.current_instruction);
-                *starting_instruction = Some(self.current_instruction.clone())
+                *starting_instruction = Some(self.current_instruction)
             }
             AssemblerSection::Data {
                 ref mut starting_instruction,
             } => {
                 debug!("Data section starts at: {}", self.current_instruction);
-                *starting_instruction = Some(self.current_instruction.clone())
+                *starting_instruction = Some(self.current_instruction)
             }
             AssemblerSection::Unknown => {
                 error!("Found a section header that is unknown: {:?}", new_section)

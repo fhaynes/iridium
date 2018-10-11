@@ -25,9 +25,9 @@ pub enum VMEventType {
 impl VMEventType {
     pub fn stop_code(&self) -> u32 {
         match &self {
-            &VMEventType::Start => 0,
-            &VMEventType::GracefulStop { code } => *code,
-            &VMEventType::Crash { code } => *code,
+            VMEventType::Start => 0,
+            VMEventType::GracefulStop { code } => *code,
+            VMEventType::Crash { code } => *code,
         }
     }
 }
@@ -420,8 +420,8 @@ impl VM {
             Opcode::LUI => {
                 let register = self.next_8_bits() as usize;
                 let value = self.registers[register];
-                let uv1 = self.next_8_bits() as i32;
-                let uv2 = self.next_8_bits() as i32;
+                let uv1 = i32::from(self.next_8_bits());
+                let uv2 = i32::from(self.next_8_bits());
                 let value = value.checked_shl(8).unwrap();
                 let value = value | uv1;
                 let value = value.checked_shl(8).unwrap();
@@ -461,7 +461,7 @@ impl VM {
             Opcode::PUSH => {
                 let data = self.registers[self.next_8_bits() as usize];
                 let mut buf: [u8; 4] = [0, 0, 0, 0];
-                if let Ok(_) = buf.as_mut().write_i32::<LittleEndian>(data) {
+                if buf.as_mut().write_i32::<LittleEndian>(data).is_ok() {
                     for b in &buf {
                         self.stack.push(*b);
                     }
@@ -473,10 +473,9 @@ impl VM {
                 let target_register = self.next_8_bits() as usize;
                 let mut buf: [u8; 4] = [0, 0, 0, 0];
                 let new_len = self.stack.len() - 4;
-                let mut c = 0;
-                for removed_element in self.stack.drain(new_len..) {
+                //for removed_element in self.stack.drain(new_len..) {
+                for (c, removed_element) in self.stack.drain(new_len..).enumerate() {
                     buf[c] = removed_element;
-                    c += 1;
                 }
                 let data = LittleEndian::read_i32(&buf);
                 self.registers[target_register] = data;
@@ -491,10 +490,8 @@ impl VM {
             Opcode::RET => {
                 let mut buf: [u8; 4] = [0, 0, 0, 0];
                 let new_len = self.stack.len() - 4;
-                let mut c = 0;
-                for removed_element in self.stack.drain(new_len..) {
+                for (c, removed_element) in self.stack.drain(new_len..).enumerate() {
                     buf[c] = removed_element;
-                    c += 1;
                 }
                 let data = LittleEndian::read_i32(&buf);
                 self.pc = data as usize;
@@ -553,8 +550,7 @@ impl VM {
 
     fn get_starting_offset(&self) -> usize {
         let mut rdr = Cursor::new(&self.program[64..68]);
-        let starting_offset = rdr.read_u32::<LittleEndian>().unwrap() as usize;
-        starting_offset
+        rdr.read_u32::<LittleEndian>().unwrap() as usize
     }
 
     // Attempts to decode the byte the VM's program counter is pointing at into an opcode

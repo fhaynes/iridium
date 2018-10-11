@@ -40,7 +40,7 @@ impl REPL {
     pub fn new(vm: VM) -> REPL {
         let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
         REPL {
-            vm: vm,
+            vm,
             command_buffer: vec![],
             asm: Assembler::new(),
             scheduler: Scheduler::new(),
@@ -316,17 +316,17 @@ impl REPL {
     }
 
     fn start_cluster(&mut self, _args: &[&str]) {
-        self.send_message(format!("Started cluster server!"));
+        self.send_message("Started cluster server!".to_string());
         self.vm.bind_cluster_server();
     }
 
     fn join_cluster(&mut self, args: &[&str]) {
-        self.send_message(format!("Attempting to join cluster..."));
+        self.send_message("Attempting to join cluster...".to_string());
         let ip = args[0];
         let port = args[1];
         let addr = ip.to_owned() + ":" + port;
         if let Ok(stream) = TcpStream::connect(addr) {
-            self.send_message(format!("Connected to cluster!"));
+            self.send_message("Connected to cluster!".to_string());
             let mut cc = cluster::client::ClusterClient::new(stream);
             cc.send_hello();
             if let Some(ref a) = self.vm.alias {
@@ -335,12 +335,12 @@ impl REPL {
                 }
             }
         } else {
-            self.send_message(format!("Could not connect to cluster!"));
+            self.send_message("Could not connect to cluster!".to_string());
         }
     }
 
     fn cluster_members(&mut self, _args: &[&str]) {
-        self.send_message(format!("Listing Known Nodes:"));
+        self.send_message("Listing Known Nodes:".to_string());
         let cluster_members = self
             .vm
             .connection_manager

@@ -35,7 +35,7 @@ impl ClusterClient {
     pub fn send_hello(&mut self) {
         let alias = self.alias.clone();
         let alias = alias.unwrap();
-        if let Ok(_) = self.raw_stream.write(&alias.as_bytes()) {
+        if self.raw_stream.write(&alias.as_bytes()).is_ok() {
             trace!("Hello sent!");
         } else {
             error!("Error sending hello");

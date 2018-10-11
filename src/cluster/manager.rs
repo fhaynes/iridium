@@ -25,13 +25,13 @@ impl Manager {
         true
     }
 
-    pub fn del_client(&mut self, alias: NodeAlias) {
-        self.clients.remove(&alias);
+    pub fn del_client(&mut self, alias: &NodeAlias) {
+        self.clients.remove(alias);
     }
 
     pub fn get_client_names(&self) -> Vec<String> {
         let mut results = vec![];
-        for (alias, _) in &self.clients {
+        for alias in self.clients.keys() {
             results.push(alias.to_owned());
         }
         results
@@ -42,7 +42,8 @@ impl Manager {
 mod test {
     use super::Manager;
 
+    #[allow(dead_code)]
     fn test_create_manager() {
-        let test_manager = Manager::new();
+        let _test_manager = Manager::new();
     }
 }
