@@ -9,11 +9,8 @@ pub mod program_parsers;
 pub mod register_parsers;
 pub mod symbols;
 
-use std::fmt;
-
 use byteorder::{LittleEndian, WriteBytesExt};
 use nom::types::CompleteStr;
-use log;
 
 use assembler::assembler_errors::AssemblerError;
 use assembler::instruction_parsers::AssemblerInstruction;
@@ -87,7 +84,10 @@ impl Assembler {
                 self.process_first_phase(&program);
                 if !self.errors.is_empty() {
                     // TODO: Can we avoid a clone here?
-                    error!("Errors were found in the first parsing phase: {:?}", self.errors);
+                    error!(
+                        "Errors were found in the first parsing phase: {:?}",
+                        self.errors
+                    );
                     return Err(self.errors.clone());
                 };
                 debug!("First parsing phase complete");
@@ -132,11 +132,18 @@ impl Assembler {
                 // TODO: Factor this out into another function? Put it in `process_label_declaration` maybe?
                 if self.current_section.is_some() {
                     // If we have hit a segment header already (e.g., `.code`) then we are ok
-                    debug!("Parsing label declaration in first phase: {:?} with offset {:?}", i.get_label_name(), self.current_instruction * 4);
+                    debug!(
+                        "Parsing label declaration in first phase: {:?} with offset {:?}",
+                        i.get_label_name(),
+                        self.current_instruction * 4
+                    );
                     self.process_label_declaration(&i);
                 } else {
                     // If we have *not* hit a segment header yet, then we have a label outside of a segment, which is not allowed
-                    error!("Label found outside of a section in first phase: {:?}", i.get_label_name());
+                    error!(
+                        "Label found outside of a section in first phase: {:?}",
+                        i.get_label_name()
+                    );
                     self.errors.push(AssemblerError::NoSegmentDeclarationFound {
                         instruction: self.current_instruction,
                     });
@@ -162,7 +169,10 @@ impl Assembler {
         // Same as in first pass, except in the second pass we care about opcodes and directives
         for i in &p.instructions {
             if i.is_directive() {
-                debug!("Found a directive in second phase {:?}, bypassing", i.directive);
+                debug!(
+                    "Found a directive in second phase {:?}, bypassing",
+                    i.directive
+                );
                 continue;
             }
             if i.is_opcode() {
@@ -200,7 +210,10 @@ impl Assembler {
             }
         };
 
-        debug!("Found label declaration: {} on line {}", name, self.current_instruction);
+        debug!(
+            "Found label declaration: {} on line {}",
+            name, self.current_instruction
+        );
         // Check if label is already in use (has an entry in the symbol table)
         // TODO: Is there a cleaner way to do this?
         if self.symbols.has_symbol(&name) {
@@ -209,8 +222,13 @@ impl Assembler {
         }
 
         // If we make it here, it isn't a symbol we've seen before, so stick it in the table
-        let symbol = Symbol::new_with_offset(name, SymbolType::Label, (self.current_instruction * 4) + 60);
-        debug!("Added new symbol to table: {:?} with offset {:?}", symbol, (self.current_instruction * 4) + 60);
+        let symbol =
+            Symbol::new_with_offset(name, SymbolType::Label, (self.current_instruction * 4) + 60);
+        debug!(
+            "Added new symbol to table: {:?} with offset {:?}",
+            symbol,
+            (self.current_instruction * 4) + 60
+        );
         self.symbols.add_symbol(symbol);
     }
 
@@ -333,11 +351,15 @@ impl Assembler {
         }
 
         match new_section {
-            AssemblerSection::Code{ref mut starting_instruction} => {
+            AssemblerSection::Code {
+                ref mut starting_instruction,
+            } => {
                 debug!("Code section starts at: {}", self.current_instruction);
                 *starting_instruction = Some(self.current_instruction.clone())
             }
-            AssemblerSection::Data{ref mut starting_instruction} => {
+            AssemblerSection::Data {
+                ref mut starting_instruction,
+            } => {
                 debug!("Data section starts at: {}", self.current_instruction);
                 *starting_instruction = Some(self.current_instruction.clone())
             }

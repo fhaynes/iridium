@@ -4,18 +4,18 @@ use std;
 use std::fs::File;
 use std::io;
 use std::io::{Read, Write};
+use std::net::TcpStream;
 use std::num::ParseIntError;
 use std::path::Path;
-use std::sync::{RwLock, Arc, mpsc};
 use std::sync::mpsc::{Receiver, Sender};
-use std::net::TcpStream;
+use std::sync::{mpsc};
+
 
 use nom::types::CompleteStr;
 
 use assembler::program_parsers::program;
 use assembler::Assembler;
 use cluster;
-use cluster::manager::Manager;
 use repl::command_parser::CommandParser;
 use scheduler::Scheduler;
 use vm::VM;
@@ -339,10 +339,14 @@ impl REPL {
         }
     }
 
-    fn cluster_members(&mut self, args: &[&str]) {
+    fn cluster_members(&mut self, _args: &[&str]) {
         self.send_message(format!("Listing Known Nodes:"));
-        let cluster_members = self.vm.connection_manager.read().unwrap().get_client_names();
+        let cluster_members = self
+            .vm
+            .connection_manager
+            .read()
+            .unwrap()
+            .get_client_names();
         self.send_message(format!("{:#?}", cluster_members));
     }
-
 }

@@ -1,15 +1,15 @@
 use std;
-use std::thread;
-use std::net::{SocketAddr};
 use std::io::Cursor;
+use std::net::SocketAddr;
 use std::sync::{Arc, RwLock};
+use std::thread;
 
 use byteorder::*;
 use chrono::prelude::*;
 use num_cpus;
 use uuid::Uuid;
 
-use assembler::{PIE_HEADER_LENGTH, PIE_HEADER_PREFIX, Assembler};
+use assembler::{PIE_HEADER_LENGTH, PIE_HEADER_PREFIX};
 use cluster;
 use cluster::manager::Manager;
 use instruction::Opcode;
@@ -25,9 +25,9 @@ pub enum VMEventType {
 impl VMEventType {
     pub fn stop_code(&self) -> u32 {
         match &self {
-            &VMEventType::Start => { 0 }
-            &VMEventType::GracefulStop{ code } => { *code }
-            &VMEventType::Crash{ code } => { *code }
+            &VMEventType::Start => 0,
+            &VMEventType::GracefulStop { code } => *code,
+            &VMEventType::Crash { code } => *code,
         }
     }
 }
@@ -76,8 +76,7 @@ pub struct VM {
     // Server address that the VM will bind to for server-to-server communications
     server_addr: Option<String>,
     // Port the server will bind to for server-to-server communications
-    server_port: Option<String>
-
+    server_port: Option<String>,
 }
 
 impl VM {
@@ -179,7 +178,6 @@ impl VM {
                 let register = self.next_8_bits() as usize;
                 let number = i32::from(self.next_16_bits());
                 self.registers[register] = number;
-
             }
             Opcode::ADD => {
                 let register1 = self.registers[self.next_8_bits() as usize];
@@ -455,17 +453,20 @@ impl VM {
                 self.registers[self.next_8_bits() as usize] = data;
             }
             Opcode::SETM => {
-                let offset = self.registers[self.next_8_bits() as usize] as usize;
+                let _offset = self.registers[self.next_8_bits() as usize] as usize;
                 let data = self.registers[self.next_8_bits() as usize];
                 let mut buf: [u8; 4] = [0, 0, 0, 0];
-                buf.as_mut().write_i32::<LittleEndian>(data);
+                let _ = buf.as_mut().write_i32::<LittleEndian>(data);
             }
             Opcode::PUSH => {
                 let data = self.registers[self.next_8_bits() as usize];
                 let mut buf: [u8; 4] = [0, 0, 0, 0];
-                buf.as_mut().write_i32::<LittleEndian>(data);
-                for b in &buf {
-                    self.stack.push(*b);
+                if let Ok(_) = buf.as_mut().write_i32::<LittleEndian>(data) {
+                    for b in &buf {
+                        self.stack.push(*b);
+                    }
+                } else {
+                    return Some(1);
                 }
             }
             Opcode::POP => {
@@ -523,7 +524,7 @@ impl VM {
         }
 
         // The 4 is added here to allow for the 4 bytes that tell the VM where the executable code starts
-        while prepension.len() < PIE_HEADER_LENGTH + 4{
+        while prepension.len() < PIE_HEADER_LENGTH + 4 {
             prepension.push(0);
         }
 
@@ -543,7 +544,10 @@ impl VM {
                 error!("Unable to bind to cluster server address: {}", addr);
             }
         } else {
-            error!("Unable to bind to cluster server port: {:?}", self.server_port);
+            error!(
+                "Unable to bind to cluster server port: {:?}",
+                self.server_port
+            );
         }
     }
 
