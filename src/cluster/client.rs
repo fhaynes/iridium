@@ -32,6 +32,12 @@ impl ClusterClient {
         }
     }
 
+    /// Sets the alias of the ClusterClient and returns it
+    pub fn with_alias(mut self, alias: String) -> Self {
+        self.alias = Some(alias);
+        self
+    }
+
     pub fn send_hello(&mut self) {
         let alias = self.alias.clone();
         let alias = alias.unwrap();

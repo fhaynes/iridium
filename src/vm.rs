@@ -70,7 +70,7 @@ pub struct VM {
     /// Contains the read-only section data
     ro_data: Vec<u8>,
     /// Is a unique, randomly generated UUID for identifying this VM
-    id: Uuid,
+    pub id: Uuid,
     /// Keeps a list of events for a particular VM
     events: Vec<VMEvent>,
     // Server address that the VM will bind to for server-to-server communications

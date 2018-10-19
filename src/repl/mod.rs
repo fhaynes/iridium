@@ -327,7 +327,7 @@ impl REPL {
         let addr = ip.to_owned() + ":" + port;
         if let Ok(stream) = TcpStream::connect(addr) {
             self.send_message("Connected to cluster!".to_string());
-            let mut cc = cluster::client::ClusterClient::new(stream);
+            let mut cc = cluster::client::ClusterClient::new(stream).with_alias(self.vm.id.to_string());
             cc.send_hello();
             if let Some(ref a) = self.vm.alias {
                 if let Ok(mut lock) = self.vm.connection_manager.write() {
