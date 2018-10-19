@@ -1,6 +1,6 @@
 [package]
 name = "iridium"
-version = "0.0.30"
+version = "0.0.31"
 authors = ["Fletcher Haynes <fletcher@subnetzero.io>"]
 description = "A resilient VM for the Palladium language"
 license = "MIT"

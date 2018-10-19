@@ -1,5 +1,5 @@
 name: iridium
-version: "0.0.24"
+version: "0.0.31"
 author: Fletcher Haynes <fletcher@subnetzero.io>
 about: Interpreter for the Iridium language
 args:
@@ -53,40 +53,3 @@ args:
         required: false
         takes_value: true
         long: node-alias
-subcommands:
-    - add-ssh-key:
-        about: Adds a public key to the list of keys authorized to access this VM remotely
-        version: "0.0.2"
-        author: Fletcher Haynes <fletcher@subnetzero.io>
-        args:
-            - PUB_KEY_USERNAME:
-                help: The username associated with this public key
-                index: 1
-                required: true
-            - PUB_KEY_FILE:
-                help: Path to the file containing the public key
-                index: 2
-                required: true
-    - remote:
-        about: Connects you to a remote Iridium VM
-        version: "0.0.1"
-        author: Fletcher Haynes <fletcher@subnetzero.io>
-        args:
-          - REMOTE_HOSTNAME:
-              help: The hostname of the remote host where the Iridium VM is running
-              takes_value: true
-              long: host
-              short: h
-              required: false
-          - REMOTE_PORT:
-              help: The port the remote Iridium VM is listening on
-              required: false
-              takes_value: true
-              long: port
-              short: p
-          - KEY_FILE:
-              help: The path to the key file you want to use to connect
-              required: true
-              takes_value: true
-              long: key
-              short: k
