@@ -1,10 +1,14 @@
 use std::io::{BufRead, Write};
+use std::io::Read;
 use std::io::{BufReader, BufWriter};
 use std::net::TcpStream;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
+
+use bincode;
+use cluster::message::IridiumMessage;
 
 pub struct ClusterClient {
     alias: Option<String>,
@@ -39,12 +43,43 @@ impl ClusterClient {
     }
 
     pub fn send_hello(&mut self) {
-        let alias = self.alias.clone();
-        let alias = alias.unwrap();
-        if self.raw_stream.write(&alias.as_bytes()).is_ok() {
-            trace!("Hello sent!");
+        match self.alias {
+            Some(ref alias) => {
+                if let Ok(mut hello) = IridiumMessage::hello(alias) {
+                    if self.raw_stream.write_all(&hello).is_ok() {
+                        trace!("Hello sent: {:?}", hello);
+                    } else {
+                        error!("Error sending hello");
+                    }
+                }
+            },
+            None => {
+                error!("Node has no ID to send hello");
+            }
+        }
+    }
+
+    pub fn alias_as_string(&self) -> Option<String> {
+        if let Some(alias) = &self.alias {
+            Some(alias.clone())
         } else {
-            error!("Error sending hello");
+            None
+        }
+    }
+
+    pub fn ip_as_string(&self) -> Option<String> {
+        if let Ok(addr) = self.raw_stream.local_addr() {
+            Some(addr.ip().to_string())
+        } else {
+            None
+        }
+    }
+
+    pub fn port_as_string(&self) -> Option<String> {
+        if let Ok(addr) = self.raw_stream.local_addr() {
+            Some(addr.port().to_string())
+        } else {
+            None
         }
     }
 
@@ -65,6 +100,21 @@ impl ClusterClient {
         }
     }
 
+    pub fn write_bytes(&mut self, msg: &[u8]) {
+        match self.writer.write_all(msg) {
+            Ok(_) => match self.writer.flush() {
+                Ok(_) => {},
+                Err(e) => {
+                    println!("Error flushing to client: {}", e);
+                    
+                }
+            },
+            Err(e) => {
+                println!("Error writing to client: {}", e);
+            }
+        }
+    }
+
     fn recv_loop(&mut self) {
         let chan = self.rx.take().unwrap();
         let mut writer = self.raw_stream.try_clone().unwrap();
@@ -73,7 +123,9 @@ impl ClusterClient {
                 match locked_rx.recv() {
                     Ok(msg) => {
                         match writer.write_all(msg.as_bytes()) {
-                            Ok(_) => {}
+                            Ok(_) => {
+                                
+                            }
                             Err(_e) => {}
                         };
                         match writer.flush() {
@@ -89,14 +141,22 @@ impl ClusterClient {
 
     pub fn run(&mut self) {
         self.recv_loop();
-        let mut buf = String::new();
         loop {
-            match self.reader.read_line(&mut buf) {
-                Ok(_) => {
-                    buf.trim_right();
-                }
+            let result: bincode::Result<IridiumMessage> = bincode::deserialize_from(&mut self.reader);
+            match result {
+                Ok(ref message) => {
+                    match message {
+                        &IridiumMessage::HelloAck{ref nodes, ref alias} => {
+                            debug!("Received list of nodes: {:?} from {:?}", nodes, alias);
+                        },
+                        _ => {
+                            error!("Unknown message received");
+                        }
+                    }
+                    debug!("Received message: {:?}", message);
+                },
                 Err(e) => {
-                    println!("Error receiving: {:#?}", e);
+                    error!("Error deserializing Iridium message: {:?}", e);
                 }
             }
         }

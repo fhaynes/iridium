@@ -534,8 +534,9 @@ impl VM {
             if let Some(ref port) = self.server_port {
                 let socket_addr: SocketAddr = (addr.to_string() + ":" + port).parse().unwrap();
                 let clone = self.connection_manager.clone();
+                let alias = self.alias.clone();
                 thread::spawn(move || {
-                    cluster::server::listen(socket_addr, clone);
+                    cluster::server::listen(alias.unwrap(), socket_addr, clone);
                 });
             } else {
                 error!("Unable to bind to cluster server address: {}", addr);
