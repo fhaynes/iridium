@@ -12,7 +12,7 @@ pub enum IridiumMessage {
         alias: String,
     },
     HelloAck {
-        alias: String,
+        alias: (String, String, String),
         nodes: Vec<(String, String, String)>,
     },
 }

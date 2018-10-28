@@ -100,6 +100,21 @@ impl ClusterClient {
         }
     }
 
+    pub fn write_bytes(&mut self, msg: &[u8]) {
+        match self.writer.write_all(msg) {
+            Ok(_) => match self.writer.flush() {
+                Ok(_) => {},
+                Err(e) => {
+                    println!("Error flushing to client: {}", e);
+                    
+                }
+            },
+            Err(e) => {
+                println!("Error writing to client: {}", e);
+            }
+        }
+    }
+
     fn recv_loop(&mut self) {
         let chan = self.rx.take().unwrap();
         let mut writer = self.raw_stream.try_clone().unwrap();
@@ -126,14 +141,24 @@ impl ClusterClient {
 
     pub fn run(&mut self) {
         self.recv_loop();
-        // let mut buf = Vec::new();
-        
         loop {
-                match bincode::deserialize_from(self.reader) {
-                    Ok(message) => {},
-                    Err(e) => {}
+            let result: bincode::Result<IridiumMessage> = bincode::deserialize_from(&mut self.reader);
+            match result {
+                Ok(ref message) => {
+                    match message {
+                        &IridiumMessage::HelloAck{ref nodes, ref alias} => {
+                            debug!("Received list of nodes: {:?} from {:?}", nodes, alias);
+                        },
+                        _ => {
+                            error!("Unknown message received");
+                        }
+                    }
+                    debug!("Received message: {:?}", message);
+                },
+                Err(e) => {
+                    error!("Error deserializing Iridium message: {:?}", e);
                 }
-
+            }
         }
     }
 }
