@@ -6,6 +6,10 @@ extern crate log;
 extern crate nom;
 extern crate num_cpus;
 extern crate uuid;
+extern crate bincode;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde;
 
 pub mod assembler;
 pub mod cluster;
