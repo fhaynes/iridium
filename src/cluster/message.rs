@@ -3,8 +3,8 @@ use std::sync::{Arc, RwLock};
 
 use bincode::*;
 
-use cluster::NodeAlias;
 use cluster::client::ClusterClient;
+use cluster::NodeAlias;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum IridiumMessage {
@@ -20,17 +20,17 @@ pub enum IridiumMessage {
 impl IridiumMessage {
     pub fn hello(alias: &str) -> Result<Vec<u8>> {
         trace!("Generating hello message");
-        let new_message = IridiumMessage::Hello{
-            alias: alias.into()
+        let new_message = IridiumMessage::Hello {
+            alias: alias.into(),
         };
         serialize(&new_message)
     }
 
     pub fn hello_ack(clients: &HashMap<NodeAlias, Arc<RwLock<ClusterClient>>>) -> Result<Vec<u8>> {
-        let results: Vec<(String, String, String)> = Vec::new();
-        for (key, value) in clients.iter() {
+        let _results: Vec<(String, String, String)> = Vec::new();
+        for (_key, value) in clients.iter() {
             if let Ok(client_data) = value.read() {
-                let client_tuple = (client_data.alias_as_string(), );
+                let _client_tuple = (client_data.alias_as_string(),);
             }
         }
         Ok(Vec::new())
@@ -43,6 +43,4 @@ impl IridiumMessage {
 }
 
 #[cfg(test)]
-mod test {
-
-}
+mod test {}

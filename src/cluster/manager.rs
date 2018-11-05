@@ -1,8 +1,8 @@
+use cluster::client::ClusterClient;
+use cluster::NodeAlias;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use std::thread;
-use cluster::client::ClusterClient;
-use cluster::NodeAlias;
 
 #[derive(Default)]
 pub struct Manager {
