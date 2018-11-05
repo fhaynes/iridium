@@ -52,6 +52,7 @@ impl REPL {
     /// at the terminal and not from pre-compiled bytecode
     pub fn run(&mut self) {
         self.send_message(REMOTE_BANNER.to_string());
+        self.send_prompt();
         loop {
             // This allocates a new String in which to store whatever the user types each iteration.
             // TODO: Figure out how allocate this outside of the loop and re-use it every iteration
@@ -59,11 +60,6 @@ impl REPL {
 
             // Blocking call until the user types in a command
             let stdin = io::stdin();
-
-            // Annoyingly, `print!` does not automatically flush stdout like `self.send_message` does, so we
-            // have to do that there for the user to see our `>>> ` prompt.
-            print!(">>> ");
-            io::stdout().flush().expect("Unable to flush stdout");
 
             // Here we'll look at the string the user gave us.
             stdin
@@ -78,9 +74,8 @@ impl REPL {
             } else {
                 let program = match program(CompleteStr(&buffer)) {
                     Ok((_remainder, program)) => program,
-                    Err(_e) => {
-                        self.send_message(REMOTE_BANNER.to_string());
-                        self.send_prompt();
+                    Err(e) => {
+                        self.send_message(format!("There was an error executing the program: {:?}", e));
                         continue;
                     }
                 };
@@ -101,7 +96,6 @@ impl REPL {
                 Ok((_remainder, program)) => Some(program),
                 Err(e) => {
                     self.send_message(format!("Unable to parse input: {:?}", e));
-                    self.send_prompt();
                     None
                 }
             };
@@ -204,7 +198,6 @@ impl REPL {
             "!cluster_members" => self.cluster_members(&args[1..]),
             _ => {
                 self.send_message("Invalid command!".to_string());
-                self.send_prompt();
             }
         };
     }
@@ -220,7 +213,6 @@ impl REPL {
             results.push(command.clone());
         }
         self.send_message(format!("{:#?}", results));
-        self.send_prompt();
     }
 
     fn program(&mut self, _args: &[&str]) {
@@ -231,7 +223,6 @@ impl REPL {
         }
         self.send_message(format!("{:#?}", results));
         self.send_message("End of Program Listing".to_string());
-        self.send_prompt();
     }
 
     fn clear_program(&mut self, _args: &[&str]) {
@@ -244,7 +235,6 @@ impl REPL {
             self.vm.registers[i] = 0;
         }
         self.send_message("Done!".to_string());
-        self.send_prompt();
     }
 
     fn registers(&mut self, _args: &[&str]) {
@@ -255,7 +245,6 @@ impl REPL {
         }
         self.send_message(format!("{:#?}", results));
         self.send_message("End of Register Listing".to_string());
-        self.send_prompt();
     }
 
     fn symbols(&mut self, _args: &[&str]) {
@@ -266,7 +255,6 @@ impl REPL {
         self.send_message("Listing symbols table:".to_string());
         self.send_message(format!("{:#?}", results));
         self.send_message("End of Symbols Listing".to_string());
-        self.send_prompt();
     }
 
     fn load_file(&mut self, _args: &[&str]) {
@@ -281,7 +269,6 @@ impl REPL {
                 Err(errors) => {
                     for error in errors {
                         self.send_message(format!("Unable to parse input: {}", error));
-                        self.send_prompt();
                     }
                     return;
                 }
@@ -304,7 +291,6 @@ impl REPL {
                 Err(errors) => {
                     for error in errors {
                         self.send_message(format!("Unable to parse input: {}", error));
-                        self.send_prompt();
                     }
                     return;
                 }
