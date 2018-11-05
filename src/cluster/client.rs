@@ -140,6 +140,18 @@ impl ClusterClient {
         loop {
             let result: bincode::Result<IridiumMessage> =
                 bincode::deserialize_from(&mut self.reader);
+            if let Err(e) = result {
+                match *e {
+                    bincode::ErrorKind::Io(inner_error) => {
+                        error!("There was an IO error with node: {:?}", inner_error);
+                        return;
+                    },
+                    _ => {
+                        error!("There was an unknown error communicating with the client: {:?}", e);
+                        return;
+                    }
+                }
+            }
             match result {
                 Ok(ref message) => {
                     match message {
