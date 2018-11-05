@@ -1,4 +1,3 @@
-use std::io::Read;
 use std::net::{SocketAddr, TcpListener};
 use std::sync::{Arc, RwLock};
 use std::thread;

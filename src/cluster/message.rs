@@ -27,10 +27,10 @@ impl IridiumMessage {
     }
 
     pub fn hello_ack(clients: &HashMap<NodeAlias, Arc<RwLock<ClusterClient>>>) -> Result<Vec<u8>> {
-        let results: Vec<(String, String, String)> = Vec::new();
-        for (key, value) in clients.iter() {
+        let _results: Vec<(String, String, String)> = Vec::new();
+        for (_key, value) in clients.iter() {
             if let Ok(client_data) = value.read() {
-                let client_tuple = (client_data.alias_as_string(),);
+                let _client_tuple = (client_data.alias_as_string(),);
             }
         }
         Ok(Vec::new())
