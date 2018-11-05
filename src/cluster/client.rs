@@ -1,5 +1,5 @@
-use std::io::{BufRead, Write};
 use std::io::Read;
+use std::io::{BufRead, Write};
 use std::io::{BufReader, BufWriter};
 use std::net::TcpStream;
 use std::sync::mpsc::channel;
@@ -52,7 +52,7 @@ impl ClusterClient {
                         error!("Error sending hello");
                     }
                 }
-            },
+            }
             None => {
                 error!("Node has no ID to send hello");
             }
@@ -103,10 +103,9 @@ impl ClusterClient {
     pub fn write_bytes(&mut self, msg: &[u8]) {
         match self.writer.write_all(msg) {
             Ok(_) => match self.writer.flush() {
-                Ok(_) => {},
+                Ok(_) => {}
                 Err(e) => {
                     println!("Error flushing to client: {}", e);
-                    
                 }
             },
             Err(e) => {
@@ -123,9 +122,7 @@ impl ClusterClient {
                 match locked_rx.recv() {
                     Ok(msg) => {
                         match writer.write_all(msg.as_bytes()) {
-                            Ok(_) => {
-                                
-                            }
+                            Ok(_) => {}
                             Err(_e) => {}
                         };
                         match writer.flush() {
@@ -142,19 +139,23 @@ impl ClusterClient {
     pub fn run(&mut self) {
         self.recv_loop();
         loop {
-            let result: bincode::Result<IridiumMessage> = bincode::deserialize_from(&mut self.reader);
+            let result: bincode::Result<IridiumMessage> =
+                bincode::deserialize_from(&mut self.reader);
             match result {
                 Ok(ref message) => {
                     match message {
-                        &IridiumMessage::HelloAck{ref nodes, ref alias} => {
+                        &IridiumMessage::HelloAck {
+                            ref nodes,
+                            ref alias,
+                        } => {
                             debug!("Received list of nodes: {:?} from {:?}", nodes, alias);
-                        },
+                        }
                         _ => {
                             error!("Unknown message received");
                         }
                     }
                     debug!("Received message: {:?}", message);
-                },
+                }
                 Err(e) => {
                     error!("Error deserializing Iridium message: {:?}", e);
                 }

@@ -10,14 +10,14 @@ extern crate chrono;
 extern crate clap;
 #[macro_use]
 extern crate log;
+extern crate bincode;
 extern crate env_logger;
 extern crate num_cpus;
 extern crate uuid;
-extern crate bincode;
 #[macro_use]
 extern crate serde_derive;
-extern crate serde;
 extern crate iridium;
+extern crate serde;
 
 use clap::App;
 use iridium::assembler::Assembler;
