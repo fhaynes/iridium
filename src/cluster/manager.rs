@@ -6,7 +6,7 @@ use cluster::NodeAlias;
 
 #[derive(Default)]
 pub struct Manager {
-    clients: HashMap<NodeAlias, Arc<RwLock<ClusterClient>>>,
+    pub clients: HashMap<NodeAlias, Arc<RwLock<ClusterClient>>>,
 }
 
 impl Manager {
