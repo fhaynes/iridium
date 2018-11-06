@@ -76,7 +76,7 @@ pub struct VM {
     // Server address that the VM will bind to for server-to-server communications
     server_addr: Option<String>,
     // Port the server will bind to for server-to-server communications
-    server_port: Option<String>,
+    pub server_port: Option<String>,
 }
 
 impl VM {
@@ -147,6 +147,7 @@ impl VM {
     }
 
     pub fn with_cluster_bind(mut self, server_addr: String, server_port: String) -> Self {
+        debug!("Binding VM to {}:{}", server_addr, server_port);
         self.server_addr = Some(server_addr);
         self.server_port = Some(server_port);
         self

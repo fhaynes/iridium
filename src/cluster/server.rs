@@ -16,13 +16,13 @@ pub fn listen(my_alias: String, addr: SocketAddr, connection_manager: Arc<RwLock
         let stream = stream.unwrap();
         thread::spawn(move || {
             debug!("Handling an incoming connection on a thread");
-            let mut client = ClusterClient::new(stream, cmgr.clone());
+            let mut client = ClusterClient::new(stream, cmgr.clone(), addr.port().to_string());
             let result: bincode::Result<IridiumMessage> =
                 bincode::deserialize_from(&mut client.reader);
             match result {
                 Ok(message) => {
                     match message {
-                        IridiumMessage::Hello { alias } => {
+                        IridiumMessage::Hello { alias, port } => {
                             debug!("Received hello");
                             let mut members: Vec<(
                                 String,
@@ -59,24 +59,22 @@ pub fn listen(my_alias: String, addr: SocketAddr, connection_manager: Arc<RwLock
                             debug!("Adding {} to clients. Client info: {:?}", alias, client);
                             {
                                 let mut cmgr_lock = cmgr.write().unwrap();
-                                let client_tuple = (alias.to_string(), client.ip_as_string().unwrap(), client.port_as_string().unwrap());
+                                let client_tuple = (alias.to_string(), client.remote_ip_as_string().unwrap(), port.to_string());
                                 cmgr_lock.add_client(client_tuple, client);
                             }
-                            debug!("Client added to managr");
+                            debug!("Client added to manager");
                         }
                         // Handles another node sending a Join message. In this case, we don't want to send back a list of all known nodes.
-                        IridiumMessage::Join { alias } => {
+                        IridiumMessage::Join { alias, port } => {
                             debug!("Received join message from alias: {:?}", alias);
                             if let Ok(mut connection_manager) = cmgr.write() {
                                 debug!("Added new client {} to conneciton manager", alias);
-                                let client_tuple = (alias.to_string(), client.ip_as_string().unwrap(), client.port_as_string().unwrap());
+                                let client_tuple = (alias.to_string(), client.remote_ip_as_string().unwrap(), port);
                                 connection_manager.add_client(client_tuple, client);
-                                return;
                             } else {
                                 error!("Unable to add {} to connection manager", alias);
                             }
                         }
-
                         _ => {
                             error!("Unknown message received from node");
                         }

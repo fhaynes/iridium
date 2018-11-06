@@ -38,11 +38,11 @@ impl Manager {
         self.clients.remove(alias);
     }
 
-    pub fn get_client_names(&self) -> Vec<NodeAlias> {
+    pub fn get_client_names(&self) -> Vec<NodeInfo> {
         debug!("Getting client names");
         let mut results = vec![];
         for alias in self.clients.keys() {
-            results.push(alias.0.to_owned());
+            results.push((alias.0.to_owned(), alias.1.to_string(), alias.2.to_string()));
         }
         results
     }

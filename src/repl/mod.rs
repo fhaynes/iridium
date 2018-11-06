@@ -3,7 +3,7 @@ pub mod command_parser;
 use std;
 use std::fs::File;
 use std::io;
-use std::io::{Read, Write};
+use std::io::{Read};
 use std::net::TcpStream;
 use std::num::ParseIntError;
 use std::path::Path;
@@ -311,12 +311,12 @@ impl REPL {
         self.send_message("Attempting to join cluster...".to_string());
         let ip = args[0];
         let port = args[1];
-        let addr = ip.to_owned() + ":" + port;
+        let addr = ip.to_owned() + ":" + port.clone();
         if let Ok(stream) = TcpStream::connect(addr) {
             self.send_message("Connected to cluster!".to_string());
             let mut cc =
-                cluster::client::ClusterClient::new(stream, self.vm.connection_manager.clone()).with_alias(self.vm.alias.clone().unwrap());
-            debug!("CC Hello is: {:?}", cc);
+                cluster::client::ClusterClient::new(stream, self.vm.connection_manager.clone(), self.vm.server_port.clone().unwrap()).with_alias(self.vm.alias.clone().unwrap());
+            debug!("CC Hello is: {:#?}", cc);
             cc.send_hello();
             if let Some(ref a) = self.vm.alias {
                 if let Ok(mut lock) = self.vm.connection_manager.write() {
