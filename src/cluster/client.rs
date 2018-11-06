@@ -3,16 +3,20 @@ use std::io::{BufReader, BufWriter};
 use std::net::TcpStream;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::{Receiver, Sender};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 
 use bincode;
 use cluster::message::IridiumMessage;
+use cluster::{NodeInfo};
+use cluster::manager::Manager;
 
+#[derive(Debug)]
 pub struct ClusterClient {
     alias: Option<String>,
     pub reader: BufReader<TcpStream>,
     pub writer: BufWriter<TcpStream>,
+    pub connection_manager: Arc<RwLock<Manager>>,
     rx: Option<Arc<Mutex<Receiver<String>>>>,
     _tx: Option<Arc<Mutex<Sender<String>>>>,
     pub raw_stream: TcpStream,
@@ -20,12 +24,13 @@ pub struct ClusterClient {
 
 impl ClusterClient {
     /// Creates and returns a new ClusterClient that wraps TcpStreams for communicating with it
-    pub fn new(stream: TcpStream) -> ClusterClient {
+    pub fn new(stream: TcpStream, manager: Arc<RwLock<Manager>>) -> ClusterClient {
         // TODO: Handle this better
         let reader = stream.try_clone().unwrap();
         let writer = stream.try_clone().unwrap();
         let (tx, rx) = channel();
         ClusterClient {
+            connection_manager: manager,
             reader: BufReader::new(reader),
             writer: BufWriter::new(writer),
             raw_stream: stream,
@@ -160,6 +165,31 @@ impl ClusterClient {
                             ref alias,
                         } => {
                             debug!("Received list of nodes: {:?} from {:?}", nodes, alias);
+                            let join_message: std::result::Result<std::vec::Vec<u8>, std::boxed::Box<bincode::ErrorKind>>;
+                            if let Some(ref alias) = self.alias_as_string() {
+                                join_message = IridiumMessage::join(&alias);
+                            } else {
+                                error!("Unable to get my own alias to send a join message to other cluster members");
+                                continue;
+                            }
+                            let join_message = join_message.unwrap();
+                            for node in nodes {
+                                let remote_alias = &node.0;
+                                let remote_ip = &node.1;
+                                let remote_port = &node.2;
+                                let addr = remote_ip.to_owned() + ":" + remote_port;
+                                if let Ok(stream) = TcpStream::connect(addr) {
+                                    info!("Connecting to: {:?}", stream);
+                                    let mut cluster_client = ClusterClient::new(stream, self.connection_manager.clone());
+                                    if let Ok(mut cm) = self.connection_manager.write() {
+                                        cluster_client.write_bytes(&join_message);
+                                        let client_tuple = (remote_alias.to_string(), cluster_client.ip_as_string().unwrap(), cluster_client.port_as_string().unwrap());
+                                        cm.add_client(client_tuple, cluster_client);
+                                    }
+                                } else {
+                                    error!("Unable to establish connection to: {:?}", node);
+                                }
+                            }
                         }
                         _ => {
                             error!("Unknown message received");

@@ -53,3 +53,8 @@ args:
         required: false
         takes_value: true
         long: node-alias
+    - DAEMON_MODE:
+        help: Does not create a REPL, only a VM running in the background
+        required: false
+        takes_value: true
+        long: daemon-mode

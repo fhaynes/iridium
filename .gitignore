@@ -2,3 +2,4 @@
 /target
 **/*.rs.bk
 .idea
+.node_id

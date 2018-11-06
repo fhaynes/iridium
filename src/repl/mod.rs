@@ -51,6 +51,7 @@ impl REPL {
     /// Run loop similar to the VM execution loop, but the instructions are taken from the user directly
     /// at the terminal and not from pre-compiled bytecode
     pub fn run(&mut self) {
+        debug!("Starting REPL run loop with VM ID of {:?}", self.vm.alias);
         self.send_message(REMOTE_BANNER.to_string());
         self.send_prompt();
         loop {
@@ -306,6 +307,7 @@ impl REPL {
     }
 
     fn join_cluster(&mut self, args: &[&str]) {
+        debug!("Joining cluster with VM ID: {:?}", self.vm.alias);
         self.send_message("Attempting to join cluster...".to_string());
         let ip = args[0];
         let port = args[1];
@@ -313,11 +315,13 @@ impl REPL {
         if let Ok(stream) = TcpStream::connect(addr) {
             self.send_message("Connected to cluster!".to_string());
             let mut cc =
-                cluster::client::ClusterClient::new(stream).with_alias(self.vm.id.to_string());
+                cluster::client::ClusterClient::new(stream, self.vm.connection_manager.clone()).with_alias(self.vm.alias.clone().unwrap());
+            debug!("CC Hello is: {:?}", cc);
             cc.send_hello();
             if let Some(ref a) = self.vm.alias {
                 if let Ok(mut lock) = self.vm.connection_manager.write() {
-                    lock.add_client(a.to_string(), cc);
+                    let client_tuple = (a.to_string(), cc.ip_as_string().unwrap(), cc.port_as_string().unwrap());
+                    lock.add_client(client_tuple, cc);
                 }
             }
         } else {
