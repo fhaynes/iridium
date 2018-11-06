@@ -1,12 +1,12 @@
 use cluster::client::ClusterClient;
-use cluster::NodeAlias;
+use cluster::{NodeAlias, NodeInfo};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use std::thread;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Manager {
-    pub clients: HashMap<NodeAlias, Arc<RwLock<ClusterClient>>>,
+    pub clients: HashMap<NodeInfo, Arc<RwLock<ClusterClient>>>,
 }
 
 impl Manager {
@@ -16,7 +16,7 @@ impl Manager {
         }
     }
 
-    pub fn add_client(&mut self, alias: NodeAlias, client: ClusterClient) -> bool {
+    pub fn add_client(&mut self, alias: NodeInfo, client: ClusterClient) -> bool {
         if self.clients.contains_key(&alias) {
             error!("Tried to add a client that already existed");
             return false;
@@ -30,19 +30,19 @@ impl Manager {
         true
     }
 
-    pub fn get_client(&mut self, alias: NodeAlias) -> Option<Arc<RwLock<ClusterClient>>> {
+    pub fn get_client(&mut self, alias: NodeInfo) -> Option<Arc<RwLock<ClusterClient>>> {
         Some(self.clients.get_mut(&alias).unwrap().clone())
     }
 
-    pub fn del_client(&mut self, alias: &NodeAlias) {
+    pub fn del_client(&mut self, alias: &NodeInfo) {
         self.clients.remove(alias);
     }
 
-    pub fn get_client_names(&self) -> Vec<String> {
+    pub fn get_client_names(&self) -> Vec<NodeInfo> {
         debug!("Getting client names");
         let mut results = vec![];
         for alias in self.clients.keys() {
-            results.push(alias.to_owned());
+            results.push((alias.0.to_owned(), alias.1.to_string(), alias.2.to_string()));
         }
         results
     }
