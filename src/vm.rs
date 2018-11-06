@@ -76,7 +76,7 @@ pub struct VM {
     // Server address that the VM will bind to for server-to-server communications
     server_addr: Option<String>,
     // Port the server will bind to for server-to-server communications
-    server_port: Option<String>,
+    pub server_port: Option<String>,
 }
 
 impl VM {
@@ -139,14 +139,15 @@ impl VM {
 
     pub fn with_alias(mut self, alias: String) -> Self {
         if alias == "" {
-            self.alias = Some(alias)
-        } else {
             self.alias = None
+        } else {
+            self.alias = Some(alias)
         }
         self
     }
 
     pub fn with_cluster_bind(mut self, server_addr: String, server_port: String) -> Self {
+        debug!("Binding VM to {}:{}", server_addr, server_port);
         self.server_addr = Some(server_addr);
         self.server_port = Some(server_port);
         self
@@ -532,9 +533,11 @@ impl VM {
     pub fn bind_cluster_server(&mut self) {
         if let Some(ref addr) = self.server_addr {
             if let Some(ref port) = self.server_port {
+                debug!("Building socket_addr from addr: {} and port: {} and alias: {:?}", addr, port, self.alias);
                 let socket_addr: SocketAddr = (addr.to_string() + ":" + port).parse().unwrap();
                 let clone = self.connection_manager.clone();
                 let alias = self.alias.clone();
+                debug!("Spawning listening thread");
                 thread::spawn(move || {
                     cluster::server::listen(alias.unwrap(), socket_addr, clone);
                 });
