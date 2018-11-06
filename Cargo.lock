@@ -250,7 +250,7 @@ dependencies = [
 
 [[package]]
 name = "iridium"
-version = "0.0.31"
+version = "0.0.33"
 dependencies = [
  "bincode 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "byteorder 1.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
