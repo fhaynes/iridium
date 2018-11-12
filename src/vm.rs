@@ -73,9 +73,9 @@ pub struct VM {
     pub id: Uuid,
     /// Keeps a list of events for a particular VM
     events: Vec<VMEvent>,
-    // Server address that the VM will bind to for server-to-server communications
+    /// Server address that the VM will bind to for server-to-server communications
     server_addr: Option<String>,
-    // Port the server will bind to for server-to-server communications
+    /// Port the server will bind to for server-to-server communications
     pub server_port: Option<String>,
 }
 
@@ -118,7 +118,7 @@ impl VM {
                 at: Utc::now(),
                 application_id: self.id,
             });
-            println!("Header was incorrect");
+            error!("Header was incorrect");
             return self.events.clone();
         }
 

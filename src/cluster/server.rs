@@ -31,19 +31,17 @@ pub fn listen(my_alias: String, addr: SocketAddr, connection_manager: Arc<RwLock
                             )> = Vec::new();
 
                             // Now we need to send back a list of cluster members in the form of a Vector of tuples, containing their alias
-                            debug!("Generating member list");
-                            {
-                                let mut cmgr_lock = cmgr.read().unwrap();
-                                debug!("Grabbed read lock on manager");
-                                for (key, value) in &cmgr_lock.clients {
-                                    debug!("Processing kv: {:#?} {:#?}", key, value);
-                                    let tuple = (
-                                        key.0.to_string(),
-                                        key.1.to_string(),
-                                        key.2.to_string(),
-                                    );
-                                    members.push(tuple);
-                                }
+                            debug!("Generating member list");                            
+                            let mut cmgr_lock = cmgr.read().unwrap();
+                            debug!("Grabbed read lock on manager");
+                            for (key, value) in &cmgr_lock.clients {
+                                debug!("Processing kv: {:#?} {:#?}", key, value);
+                                let tuple = (
+                                    key.0.to_string(),
+                                    key.1.to_string(),
+                                    key.2.to_string(),
+                                );
+                                members.push(tuple);
                             }
                             debug!("Generating hello_ack");
                             let hello_ack = IridiumMessage::HelloAck {
@@ -64,6 +62,7 @@ pub fn listen(my_alias: String, addr: SocketAddr, connection_manager: Arc<RwLock
                             }
                             debug!("Client added to manager");
                         }
+                        
                         // Handles another node sending a Join message. In this case, we don't want to send back a list of all known nodes.
                         IridiumMessage::Join { alias, port } => {
                             debug!("Received join message from alias: {:?}", alias);

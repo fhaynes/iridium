@@ -8,6 +8,7 @@ use assembler::label_parsers::label_declaration;
 use assembler::opcode_parsers::*;
 use assembler::operand_parsers::operand;
 use assembler::{SymbolTable, Token};
+use instruction;
 
 const MAX_I16: i32 = 32768;
 const MIN_I16: i32 = -32768;
@@ -38,17 +39,15 @@ impl AssemblerInstruction {
                 }
             }
         }
-
         for operand in &[&self.operand1, &self.operand2, &self.operand3] {
             if let Some(token) = operand {
-                AssemblerInstruction::extract_operand(token, &mut results, symbols)
+                AssemblerInstruction::extract_operand(token, &mut results, symbols);
             }
         }
-
         while results.len() < 4 {
             results.push(0);
         }
-
+        
         results
     }
 
@@ -60,8 +59,74 @@ impl AssemblerInstruction {
         self.opcode.is_some()
     }
 
+    pub fn is_integer_needs_splitting(&self) -> bool {
+        if let Some(ref op) = self.opcode {
+            match op {
+                Token::Op{ code } => {
+                    match code {
+                        instruction::Opcode::LOAD => {
+                            if let Some(ref first_half) = self.operand2 {
+                                match first_half {
+                                    Token::IntegerOperand{ ref value } => {
+                                        if *value > MAX_I16 || *value < MIN_I16 {
+                                            return true;
+                                        }
+                                        return false;
+                                    },
+                                    _ => {
+                                        return false;
+                                    }
+                                }
+                            }
+                            return true;
+                        },
+                        _ => { return false; }
+                    }
+                }
+                _ => { return false; }
+            }
+        }
+        false
+    }
+
     pub fn is_directive(&self) -> bool {
         self.directive.is_some()
+    }
+
+    pub fn get_integer_value(&self) -> Option<i16> {
+        if let Some(ref operand) = self.operand2 {
+            match operand {
+                Token::IntegerOperand{ ref value } => {
+                    return Some(*value as i16)
+                },
+                _ => {
+                    return None
+                }
+            }
+        }
+        None
+    }
+
+    pub fn get_register_number(&self) -> Option<u8> {
+        match self.operand1 {
+            Some(ref reg_token) => {
+                match reg_token {
+                    Token::Register{ ref reg_num } => {
+                        Some(reg_num.clone())
+                    },
+                    _ => { None }
+                }
+            },
+            None => { None }
+        }
+    }
+
+    pub fn set_opernand_two(&mut self, t: Token) {
+        self.operand2 = Some(t)
+    }
+
+    pub fn set_operand_three(&mut self, t: Token) {
+        self.operand3 = Some(t)
     }
 
     /// Checks if the AssemblyInstruction has any operands at all
@@ -113,32 +178,13 @@ impl AssemblerInstruction {
         match t {
             Token::Register { reg_num } => {
                 results.push(*reg_num);
-            }
-            // This operand is a bit special. Since we use fixed width instructions, we only have 16-bits to use for the number.
-            // If the user wants to store a 32-bit register, we need to convert the number into bits, and then use two instructions to
-            // get the entire value into the register
+            },
             Token::IntegerOperand { value } => {
-                if *value > MAX_I16 || *value < MIN_I16 {
-                    // This creates the second instructino that loads the second group of 16 bits
-                    let mut wtr = vec![];
-                    wtr.write_i32::<LittleEndian>(*value).unwrap();
-                    results.push(wtr[3]);
-                    results.push(wtr[2]);
-
-                    let opcode: u8 = 39;
-                    let register_offset = results.len() - 3;
-                    let register = results[register_offset];
-                    results.push(opcode);
-                    results.push(register);
-                    results.push(wtr[1]);
-                    results.push(wtr[0]);
-                } else {
-                    let mut wtr = vec![];
-                    wtr.write_i32::<LittleEndian>(*value).unwrap();
-                    results.push(wtr[1]);
-                    results.push(wtr[0]);
-                }
-            }
+                let mut wtr = vec![];
+                wtr.write_i16::<LittleEndian>(*value as i16).unwrap();
+                results.push(wtr[1]);
+                results.push(wtr[0]);
+            },
             Token::LabelUsage { name } => {
                 if let Some(value) = symbols.symbol_value(name) {
                     let mut wtr = vec![];

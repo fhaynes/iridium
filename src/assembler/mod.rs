@@ -24,7 +24,7 @@ pub const PIE_HEADER_PREFIX: [u8; 4] = [0x45, 0x50, 0x49, 0x45];
 /// Constant that determines how long the header is. There are 60 zeros left after the prefix, for later usage if needed.
 pub const PIE_HEADER_LENGTH: usize = 64;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     Op { code: Opcode },
     Register { reg_num: u8 },
@@ -79,9 +79,9 @@ impl Assembler {
 
     pub fn assemble(&mut self, raw: &str) -> Result<Vec<u8>, Vec<AssemblerError>> {
         match program(CompleteStr(raw)) {
-            Ok((_remainder, program)) => {
+            Ok((_remainder, mut program)) => {
                 // Start processing the AssembledInstructions
-                self.process_first_phase(&program);
+                self.process_first_phase(&mut program);
                 if !self.errors.is_empty() {
                     // TODO: Can we avoid a clone here?
                     error!(
@@ -123,7 +123,30 @@ impl Assembler {
     }
 
     /// Runs the first pass of the two-pass assembling process. It looks for labels and puts them in the symbol table
-    fn process_first_phase(&mut self, p: &Program) {
+    fn process_first_phase(&mut self, p: &mut Program) {
+        info!("Beginning search for LOAD instructions that need to be split up");
+        let mut inserts_to_do = Vec::new();
+        for (idx, i) in p.instructions.iter_mut().enumerate() {
+            if i.is_integer_needs_splitting() {
+                let value = i.get_integer_value();
+                let register = i.get_register_number();
+                let mut wtr = vec![];
+                wtr.write_i16::<LittleEndian>(value.unwrap());
+                i.operand2 = Some(Token::IntegerOperand{ value: wtr[1].into() });
+                let new_instruction = AssemblerInstruction {
+                    opcode: Some(Token::Op{ code: Opcode::LUI }),
+                    label: None,
+                    directive: None,
+                    operand1: i.operand1.clone(),
+                    operand2: Some(Token::IntegerOperand{ value: wtr[0].into() }),
+                    operand3: None
+                };
+                inserts_to_do.push((idx + 1, new_instruction));
+            }
+        }
+        for insert in inserts_to_do {
+            p.instructions.insert(insert.0, insert.1)
+        }
         info!("Beginning first parsing phase");
         // Iterate over every instruction, even though in the first phase we only care about labels and directives
         for i in &p.instructions {
@@ -176,19 +199,6 @@ impl Assembler {
                 continue;
             }
             if i.is_opcode() {
-                // Opcodes know how to properly transform themselves into 32-bits, so we can just call `to_bytes` and append to our program
-                // if let Some(ref label_dec) = i.label {
-                //     match label_dec {
-                //         Token::LabelDeclaration { ref name } => {
-                //             debug!("Processing label declaration in second phase: {:?} with offset: {:?}", i.label, self.current_instruction * 4);
-                //             self.symbols
-                //                 .set_symbol_offset(name, self.current_instruction * 4);
-                //         }
-                //         _ => {
-                //             debug!("Opcode has an unknown token: {:?}", label_dec);
-                //         }
-                //     }
-                // }
                 let mut bytes = i.to_bytes(&self.symbols);
                 program.append(&mut bytes);
             }
@@ -237,7 +247,7 @@ impl Assembler {
         let directive_name = match i.get_directive_name() {
             Some(name) => name,
             None => {
-                println!("Directive has an invalid name: {:?}", i);
+                error!("Directive has an invalid name: {:?}", i);
                 return;
             }
         };
@@ -543,8 +553,8 @@ mod tests {
         let test_string = "hello: .asciiz 'Fail'";
         let result = program(CompleteStr(test_string));
         assert_eq!(result.is_ok(), true);
-        let (_, p) = result.unwrap();
-        asm.process_first_phase(&p);
+        let (_, mut p) = result.unwrap();
+        asm.process_first_phase(&mut p);
         assert_eq!(asm.errors.len(), 1);
     }
 
@@ -558,8 +568,8 @@ mod tests {
         ";
         let result = program(CompleteStr(test_string));
         assert_eq!(result.is_ok(), true);
-        let (_, p) = result.unwrap();
-        asm.process_first_phase(&p);
+        let (_, mut p) = result.unwrap();
+        asm.process_first_phase(&mut p);
         assert_eq!(asm.errors.len(), 0);
     }
 }

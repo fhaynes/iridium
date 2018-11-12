@@ -191,6 +191,7 @@ impl ClusterClient {
                             }
                             let join_message = join_message.unwrap();
                             for node in nodes {
+                                debug!("Sending join to {:#?}", node);
                                 let remote_alias = &node.0;
                                 let remote_ip = &node.1;
                                 let remote_port = &node.2;
