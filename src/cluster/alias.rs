@@ -1,6 +1,6 @@
-use std::path::PathBuf;
 use std::fs::File;
-use std::io::{Read, Error, Write};
+use std::io::{Error, Read, Write};
+use std::path::PathBuf;
 
 pub fn read_node_id(path: &str) -> Result<String, Error> {
     let path = PathBuf::from(path);

@@ -49,7 +49,7 @@ mod arithmetic {
         c.bench_function("execute_div", move |b| b.iter(clos));
     }
 
-    criterion_group!{
+    criterion_group! {
         name = arithmetic;
         config = Criterion::default();
         targets = execute_add, execute_sub, execute_mul, execute_div,

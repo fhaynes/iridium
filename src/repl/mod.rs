@@ -3,7 +3,7 @@ pub mod command_parser;
 use std;
 use std::fs::File;
 use std::io;
-use std::io::{Read};
+use std::io::Read;
 use std::net::TcpStream;
 use std::num::ParseIntError;
 use std::path::Path;
@@ -76,7 +76,10 @@ impl REPL {
                 let program = match program(CompleteStr(&buffer)) {
                     Ok((_remainder, program)) => program,
                     Err(e) => {
-                        self.send_message(format!("There was an error executing the program: {:?}", e));
+                        self.send_message(format!(
+                            "There was an error executing the program: {:?}",
+                            e
+                        ));
                         continue;
                     }
                 };
@@ -314,13 +317,21 @@ impl REPL {
         let addr = ip.to_owned() + ":" + port.clone();
         if let Ok(stream) = TcpStream::connect(addr) {
             self.send_message("Connected to cluster!".to_string());
-            let mut cc =
-                cluster::client::ClusterClient::new(stream, self.vm.connection_manager.clone(), self.vm.server_port.clone().unwrap()).with_alias(self.vm.alias.clone().unwrap());
+            let mut cc = cluster::client::ClusterClient::new(
+                stream,
+                self.vm.connection_manager.clone(),
+                self.vm.server_port.clone().unwrap(),
+            )
+            .with_alias(self.vm.alias.clone().unwrap());
             debug!("CC Hello is: {:#?}", cc);
             cc.send_hello();
             if let Some(ref a) = self.vm.alias {
                 if let Ok(mut lock) = self.vm.connection_manager.write() {
-                    let client_tuple = (a.to_string(), cc.ip_as_string().unwrap(), cc.port_as_string().unwrap());
+                    let client_tuple = (
+                        a.to_string(),
+                        cc.ip_as_string().unwrap(),
+                        cc.port_as_string().unwrap(),
+                    );
                     lock.add_client(client_tuple, cc);
                 }
             }

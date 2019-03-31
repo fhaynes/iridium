@@ -132,14 +132,18 @@ impl Assembler {
                 let register = i.get_register_number();
                 let mut wtr = vec![];
                 wtr.write_i16::<LittleEndian>(value.unwrap());
-                i.operand2 = Some(Token::IntegerOperand{ value: wtr[1].into() });
+                i.operand2 = Some(Token::IntegerOperand {
+                    value: wtr[1].into(),
+                });
                 let new_instruction = AssemblerInstruction {
-                    opcode: Some(Token::Op{ code: Opcode::LUI }),
+                    opcode: Some(Token::Op { code: Opcode::LUI }),
                     label: None,
                     directive: None,
                     operand1: i.operand1.clone(),
-                    operand2: Some(Token::IntegerOperand{ value: wtr[0].into() }),
-                    operand3: None
+                    operand2: Some(Token::IntegerOperand {
+                        value: wtr[0].into(),
+                    }),
+                    operand3: None,
                 };
                 inserts_to_do.push((idx + 1, new_instruction));
             }

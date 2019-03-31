@@ -1,5 +1,4 @@
 use std::fs::File;
-use std::io::prelude::*;
 use std::io::Read;
 use std::path::Path;
 use std::sync::mpsc::Receiver;
@@ -45,7 +44,9 @@ fn main() {
     };
 
     if matches.is_present("ENABLE_REMOTE_ACCESS") {
-        let port = matches.value_of("LISTEN_PORT").unwrap_or(DEFAULT_REMOTE_ACCESS_PORT);
+        let port = matches
+            .value_of("LISTEN_PORT")
+            .unwrap_or(DEFAULT_REMOTE_ACCESS_PORT);
         let host = matches.value_of("LISTEN_HOST").unwrap_or("127.0.0.1");
         start_remote_server(host.to_string(), port.to_string());
     }
@@ -53,16 +54,17 @@ fn main() {
     // Find or generate a unique node ID
     let alias: String;
     if matches.is_present("NODE_ALIAS") {
-        let cli_alias = matches.value_of("NODE_ALIAS").expect("NODE_ALIAS CLI flag present, but unable to get value");
+        let cli_alias = matches
+            .value_of("NODE_ALIAS")
+            .expect("NODE_ALIAS CLI flag present, but unable to get value");
         alias = cli_alias.into();
     } else {
         alias = match iridium::cluster::alias::read_node_id(NODE_ID_FILENAME) {
-            Ok(read_alias) => {
-                read_alias
-            },
+            Ok(read_alias) => read_alias,
             Err(_) => {
                 let new_alias = uuid::Uuid::new_v4().to_hyphenated().to_string();
-                if let Err(_) = iridium::cluster::alias::write_node_id(NODE_ID_FILENAME, &new_alias) {
+                if let Err(_) = iridium::cluster::alias::write_node_id(NODE_ID_FILENAME, &new_alias)
+                {
                     std::process::exit(1);
                 }
                 new_alias
@@ -74,7 +76,9 @@ fn main() {
     let server_addr = matches
         .value_of("SERVER_LISTEN_HOST")
         .unwrap_or("127.0.0.1");
-    let server_port = matches.value_of("SERVER_LISTEN_PORT").unwrap_or(DEFAULT_NODE_LISTEN_PORT);
+    let server_port = matches
+        .value_of("SERVER_LISTEN_PORT")
+        .unwrap_or(DEFAULT_NODE_LISTEN_PORT);
 
     let num_threads = match matches.value_of("THREADS") {
         Some(number) => match number.parse::<usize>() {

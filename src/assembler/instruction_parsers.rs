@@ -47,7 +47,7 @@ impl AssemblerInstruction {
         while results.len() < 4 {
             results.push(0);
         }
-        
+
         results
     }
 
@@ -62,28 +62,30 @@ impl AssemblerInstruction {
     pub fn is_integer_needs_splitting(&self) -> bool {
         if let Some(ref op) = self.opcode {
             match op {
-                Token::Op{ code } => {
-                    match code {
-                        instruction::Opcode::LOAD => {
-                            if let Some(ref first_half) = self.operand2 {
-                                match first_half {
-                                    Token::IntegerOperand{ ref value } => {
-                                        if *value > MAX_I16 || *value < MIN_I16 {
-                                            return true;
-                                        }
-                                        return false;
-                                    },
-                                    _ => {
-                                        return false;
+                Token::Op { code } => match code {
+                    instruction::Opcode::LOAD => {
+                        if let Some(ref first_half) = self.operand2 {
+                            match first_half {
+                                Token::IntegerOperand { ref value } => {
+                                    if *value > MAX_I16 || *value < MIN_I16 {
+                                        return true;
                                     }
+                                    return false;
+                                }
+                                _ => {
+                                    return false;
                                 }
                             }
-                            return true;
-                        },
-                        _ => { return false; }
+                        }
+                        return true;
                     }
+                    _ => {
+                        return false;
+                    }
+                },
+                _ => {
+                    return false;
                 }
-                _ => { return false; }
             }
         }
         false
@@ -96,12 +98,8 @@ impl AssemblerInstruction {
     pub fn get_integer_value(&self) -> Option<i16> {
         if let Some(ref operand) = self.operand2 {
             match operand {
-                Token::IntegerOperand{ ref value } => {
-                    return Some(*value as i16)
-                },
-                _ => {
-                    return None
-                }
+                Token::IntegerOperand { ref value } => return Some(*value as i16),
+                _ => return None,
             }
         }
         None
@@ -109,15 +107,11 @@ impl AssemblerInstruction {
 
     pub fn get_register_number(&self) -> Option<u8> {
         match self.operand1 {
-            Some(ref reg_token) => {
-                match reg_token {
-                    Token::Register{ ref reg_num } => {
-                        Some(reg_num.clone())
-                    },
-                    _ => { None }
-                }
+            Some(ref reg_token) => match reg_token {
+                Token::Register { ref reg_num } => Some(reg_num.clone()),
+                _ => None,
             },
-            None => { None }
+            None => None,
         }
     }
 
@@ -178,13 +172,13 @@ impl AssemblerInstruction {
         match t {
             Token::Register { reg_num } => {
                 results.push(*reg_num);
-            },
+            }
             Token::IntegerOperand { value } => {
                 let mut wtr = vec![];
                 wtr.write_i16::<LittleEndian>(*value as i16).unwrap();
                 results.push(wtr[1]);
                 results.push(wtr[0]);
-            },
+            }
             Token::LabelUsage { name } => {
                 if let Some(value) = symbols.symbol_value(name) {
                     let mut wtr = vec![];

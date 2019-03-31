@@ -533,7 +533,10 @@ impl VM {
     pub fn bind_cluster_server(&mut self) {
         if let Some(ref addr) = self.server_addr {
             if let Some(ref port) = self.server_port {
-                debug!("Building socket_addr from addr: {} and port: {} and alias: {:?}", addr, port, self.alias);
+                debug!(
+                    "Building socket_addr from addr: {} and port: {} and alias: {:?}",
+                    addr, port, self.alias
+                );
                 let socket_addr: SocketAddr = (addr.to_string() + ":" + port).parse().unwrap();
                 let clone = self.connection_manager.clone();
                 let alias = self.alias.clone();

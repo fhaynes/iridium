@@ -1,8 +1,8 @@
+pub mod alias;
 pub mod client;
 pub mod manager;
 pub mod message;
 pub mod server;
-pub mod alias;
 
 type NodeAlias = String;
 type NodeIP = String;
