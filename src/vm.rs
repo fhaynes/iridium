@@ -1,3 +1,5 @@
+//! Contains the core VM struct that executes bytecode
+
 use std;
 use std::io::Cursor;
 use std::net::SocketAddr;
@@ -16,6 +18,7 @@ use instruction::Opcode;
 use std::f64::EPSILON;
 
 #[derive(Clone, Debug)]
+/// Enum for various types of events that can happen to the VM
 pub enum VMEventType {
     Start,
     GracefulStop { code: u32 },
@@ -23,6 +26,7 @@ pub enum VMEventType {
 }
 
 impl VMEventType {
+    /// Gets the stop code of the VM, analgous to the linux exit code
     pub fn stop_code(&self) -> u32 {
         match &self {
             VMEventType::Start => 0,
@@ -32,12 +36,14 @@ impl VMEventType {
     }
 }
 #[derive(Clone, Debug)]
+/// Struct for a VMEvent that includes the application ID and time
 pub struct VMEvent {
     pub event: VMEventType,
     at: DateTime<Utc>,
     application_id: Uuid,
 }
 
+/// Default starting size for a VM's heap
 pub const DEFAULT_HEAP_STARTING_SIZE: usize = 64;
 
 /// Virtual machine struct that will execute bytecode
@@ -137,6 +143,7 @@ impl VM {
         self.events.clone()
     }
 
+    /// Creates a VM with a specific alias
     pub fn with_alias(mut self, alias: String) -> Self {
         if alias == "" {
             self.alias = None
@@ -146,6 +153,7 @@ impl VM {
         self
     }
 
+    /// Binds a VM to a specific address and port so it can use the network
     pub fn with_cluster_bind(mut self, server_addr: String, server_port: String) -> Self {
         debug!("Binding VM to {}:{}", server_addr, server_port);
         self.server_addr = Some(server_addr);
