@@ -46,6 +46,9 @@ pub struct VMEvent {
 /// Default starting size for a VM's heap
 pub const DEFAULT_HEAP_STARTING_SIZE: usize = 64;
 
+/// Default stack starting space. We'll default to 2MB.
+pub const DEFAULT_STACK_SPACE: usize = 2097152;
+
 /// Virtual machine struct that will execute bytecode
 #[derive(Default, Clone)]
 pub struct VM {
@@ -63,10 +66,14 @@ pub struct VM {
     pub connection_manager: Arc<RwLock<Manager>>,
     /// Program counter that tracks which byte is being executed
     pc: usize,
+    /// Keeps track of where in the stack the program currently is
+    sp: usize,
+    /// Keeps track of the current frame pointer
+    bp: usize,
     /// Used for heap memory
     heap: Vec<u8>,
     /// Used to represent the stack
-    stack: Vec<u8>,
+    stack: Vec<i32>,
     /// Contains the remainder of modulo division ops
     remainder: usize,
     /// Contains the result of the last comparison operation
@@ -94,9 +101,11 @@ impl VM {
             program: vec![],
             ro_data: vec![],
             heap: vec![0; DEFAULT_HEAP_STARTING_SIZE],
-            stack: vec![],
+            stack: Vec::with_capacity(DEFAULT_STACK_SPACE),
             connection_manager: Arc::new(RwLock::new(Manager::new())),
             pc: 0,
+            sp: 0,
+            bp: 0,
             loop_counter: 0,
             remainder: 0,
             equal_flag: false,
@@ -469,41 +478,31 @@ impl VM {
             }
             Opcode::PUSH => {
                 let data = self.registers[self.next_8_bits() as usize];
-                let mut buf: [u8; 4] = [0, 0, 0, 0];
-                if buf.as_mut().write_i32::<LittleEndian>(data).is_ok() {
-                    for b in &buf {
-                        self.stack.push(*b);
-                    }
-                } else {
-                    return Some(1);
-                }
+                self.stack.push(data);
+                self.sp = self.sp + 1;
             }
             Opcode::POP => {
                 let target_register = self.next_8_bits() as usize;
-                let mut buf: [u8; 4] = [0, 0, 0, 0];
-                let new_len = self.stack.len() - 4;
-                //for removed_element in self.stack.drain(new_len..) {
-                for (c, removed_element) in self.stack.drain(new_len..).enumerate() {
-                    buf[c] = removed_element;
-                }
-                let data = LittleEndian::read_i32(&buf);
-                self.registers[target_register] = data;
+                self.registers[target_register] = self.stack.pop().unwrap();
+                self.sp = self.sp - 1
             }
             Opcode::CALL => {
+                // First we capture the return destination for when the function is done
                 let return_destination = self.pc + 3;
+                // Next we get the address we are going to jump to, i.e., that of the 
+                // destination subroutine
                 let destination = self.next_16_bits();
-                let bytes: [u8; 4] = VM::i32_to_bytes(return_destination as i32);
-                self.stack.extend_from_slice(&bytes);
+                // Push the return address onto the stack
+                self.stack.push(return_destination as i32);
+                self.stack.push(self.bp as i32);
+                self.bp = self.sp;
+                // Change the program counter to that of the destination
                 self.pc = destination as usize;
             }
             Opcode::RET => {
-                let mut buf: [u8; 4] = [0, 0, 0, 0];
-                let new_len = self.stack.len() - 4;
-                for (c, removed_element) in self.stack.drain(new_len..).enumerate() {
-                    buf[c] = removed_element;
-                }
-                let data = LittleEndian::read_i32(&buf);
-                self.pc = data as usize;
+                self.sp = self.bp;
+                self.bp = self.stack.pop().unwrap() as usize;
+                self.pc = self.stack.pop().unwrap() as usize;
             }
         };
         None
@@ -575,7 +574,7 @@ impl VM {
         opcode
     }
 
-    fn i32_to_bytes(num: i32) -> [u8; 4] {
+    fn _i32_to_bytes(num: i32) -> [u8; 4] {
         let mut buf: [u8; 4] = [0, 0, 0, 0];
         buf.as_mut().write_i32::<LittleEndian>(num).unwrap();
         buf
@@ -646,9 +645,7 @@ mod tests {
     fn test_add_opcode() {
         let mut test_vm = VM::get_test_vm();
         test_vm.program = vec![1, 0, 1, 2];
-        println!("{:?}", test_vm.program);
         test_vm.program = VM::prepend_header(test_vm.program);
-        println!("{:?}", test_vm.program);
         test_vm.run();
         assert_eq!(test_vm.registers[2], 15);
     }
@@ -1064,18 +1061,26 @@ mod tests {
         test_vm.registers[0] = 10;
         test_vm.program = vec![44, 0, 0, 0];
         test_vm.run_once();
-        assert_eq!(test_vm.stack, vec![10, 0, 0, 0]);
+        assert_eq!(test_vm.stack[0], 10);
     }
 
     #[test]
     fn test_pop_opcode() {
         let mut test_vm = VM::new();
         test_vm.stack.push(10);
-        test_vm.stack.push(0);
-        test_vm.stack.push(0);
-        test_vm.stack.push(0);
+        test_vm.sp += 1;
         test_vm.program = vec![45, 0, 0, 0];
         test_vm.run_once();
         assert_eq!(test_vm.registers[0], 10);
+    }
+
+    #[test]
+    fn test_call_opcode() {
+        let mut test_vm = VM::new();
+        test_vm.program = vec![46, 0, 8, 0, 5, 0, 0, 0, 0, 0, 1, 244, 47, 0, 0, 0];
+        test_vm.run_once();
+        test_vm.run_once();
+        test_vm.run_once();
+        assert_eq!(test_vm.registers[0], 500);
     }
 }

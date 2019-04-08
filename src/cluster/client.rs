@@ -9,7 +9,6 @@ use std::thread;
 use bincode;
 use cluster::manager::Manager;
 use cluster::message::IridiumMessage;
-use cluster::NodeInfo;
 
 #[derive(Debug)]
 pub struct ClusterClient {
@@ -189,7 +188,7 @@ impl ClusterClient {
                     match message {
                         &IridiumMessage::HelloAck {
                             ref nodes,
-                            ref alias,
+                            alias: _,
                         } => {
                             let join_message: std::result::Result<
                                 std::vec::Vec<u8>,

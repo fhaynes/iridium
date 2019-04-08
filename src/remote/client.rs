@@ -77,7 +77,7 @@ impl Client {
         loop {
             match self.reader.read_line(&mut buf) {
                 Ok(_) => {
-                    buf.trim_right();
+                    buf.trim_end();
                     self.repl.run_single(&buf);
                 }
                 Err(e) => {

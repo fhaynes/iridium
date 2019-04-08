@@ -1,5 +1,5 @@
 use cluster::client::ClusterClient;
-use cluster::{NodeAlias, NodeInfo};
+use cluster::{NodeInfo};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use std::thread;

@@ -129,9 +129,9 @@ impl Assembler {
         for (idx, i) in p.instructions.iter_mut().enumerate() {
             if i.is_integer_needs_splitting() {
                 let value = i.get_integer_value();
-                let register = i.get_register_number();
+                let _register = i.get_register_number();
                 let mut wtr = vec![];
-                wtr.write_i16::<LittleEndian>(value.unwrap());
+                let _ = wtr.write_i16::<LittleEndian>(value.unwrap());
                 i.operand2 = Some(Token::IntegerOperand {
                     value: wtr[1].into(),
                 });

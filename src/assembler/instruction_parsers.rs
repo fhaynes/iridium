@@ -198,7 +198,11 @@ impl AssemblerInstruction {
 
 impl fmt::Display for AssemblerInstruction {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "(Label: {:?} Opcode: {:?} Directive: {:?} Operand #1: {:?} Operand #2: {:?} Operand #3: {:?})", self.label, self.opcode, self.directive, self.operand1, self.operand2, self.operand3)
+        write!(
+            f,
+            "(Label: {:?} Opcode: {:?} Directive: {:?} Operand #1: {:?} Operand #2: {:?} Operand #3: {:?})",
+            self.label, self.opcode, self.directive, self.operand1, self.operand2, self.operand3
+        )
     }
 }
 
@@ -274,9 +278,7 @@ mod tests {
                     label: None,
                     directive: None,
                     operand1: Some(Token::Register { reg_num: 0 }),
-                    operand2: Some(Token::LabelUsage {
-                        name: "test1".to_string()
-                    }),
+                    operand2: Some(Token::LabelUsage { name: "test1".to_string() }),
                     operand3: None
                 }
             ))
@@ -367,12 +369,29 @@ mod tests {
             Ok((
                 CompleteStr(""),
                 AssemblerInstruction {
-                    opcode: Some(Token::Op {
-                        code: Opcode::CLOOP
-                    }),
+                    opcode: Some(Token::Op { code: Opcode::CLOOP }),
                     label: None,
                     directive: None,
                     operand1: Some(Token::IntegerOperand { value: 10 }),
+                    operand2: None,
+                    operand3: None
+                }
+            ))
+        );
+    }
+
+    #[test]
+    fn test_parse_call() {
+        let result = instruction_combined(CompleteStr("call @test\n"));
+        assert_eq!(
+            result,
+            Ok((
+                CompleteStr(""),
+                AssemblerInstruction {
+                    opcode: Some(Token::Op { code: Opcode::CALL }),
+                    label: None,
+                    directive: None,
+                    operand1: Some(Token::LabelUsage { name: "test".to_string() }),
                     operand2: None,
                     operand3: None
                 }
