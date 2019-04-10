@@ -62,3 +62,23 @@ fn test_hlt() {
     let events = vm.run();
     assert_eq!(events[1].event.stop_code(), 0);
 }
+
+#[test]
+fn test_function_call() {
+    commons::setup();
+    let mut vm = iridium::vm::VM::new();
+    let mut asm = iridium::assembler::Assembler::new();
+    let code = r"
+    .data
+    .code
+    call @test
+    hlt
+    test:
+    load $31 #1
+    ret";
+    let program = asm.assemble(code);
+    vm.add_bytes(program.unwrap());
+    let events = vm.run();
+    assert_eq!(vm.registers[31], 1);
+    assert_eq!(events[1].event.stop_code(), 0);
+}
