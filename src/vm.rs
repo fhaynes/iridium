@@ -143,9 +143,7 @@ impl VM {
             is_done = self.execute_instruction();
         }
         self.events.push(VMEvent {
-            event: VMEventType::GracefulStop {
-                code: is_done.unwrap(),
-            },
+            event: VMEventType::GracefulStop { code: is_done.unwrap() },
             at: Utc::now(),
             application_id: self.id,
         });
@@ -489,7 +487,7 @@ impl VM {
             Opcode::CALL => {
                 // First we capture the return destination for when the function is done
                 let return_destination = self.pc + 3;
-                // Next we get the address we are going to jump to, i.e., that of the 
+                // Next we get the address we are going to jump to, i.e., that of the
                 // destination subroutine
                 let destination = self.next_16_bits();
                 // Push the return address onto the stack
@@ -540,10 +538,7 @@ impl VM {
     pub fn bind_cluster_server(&mut self) {
         if let Some(ref addr) = self.server_addr {
             if let Some(ref port) = self.server_port {
-                debug!(
-                    "Building socket_addr from addr: {} and port: {} and alias: {:?}",
-                    addr, port, self.alias
-                );
+                debug!("Building socket_addr from addr: {} and port: {} and alias: {:?}", addr, port, self.alias);
                 let socket_addr: SocketAddr = (addr.to_string() + ":" + port).parse().unwrap();
                 let clone = self.connection_manager.clone();
                 let alias = self.alias.clone();
@@ -555,10 +550,7 @@ impl VM {
                 error!("Unable to bind to cluster server address: {}", addr);
             }
         } else {
-            error!(
-                "Unable to bind to cluster server port: {:?}",
-                self.server_port
-            );
+            error!("Unable to bind to cluster server port: {:?}", self.server_port);
         }
     }
 
@@ -589,8 +581,7 @@ impl VM {
 
     // Grabs the next 16 bits (2 bytes)
     fn next_16_bits(&mut self) -> u16 {
-        let result =
-            ((u16::from(self.program[self.pc])) << 8) | u16::from(self.program[self.pc + 1]);
+        let result = ((u16::from(self.program[self.pc])) << 8) | u16::from(self.program[self.pc + 1]);
         self.pc += 2;
         result
     }

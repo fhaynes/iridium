@@ -9,16 +9,12 @@ pub struct Server {
 
 impl Server {
     pub fn new(bind_hostname: String, bind_port: String) -> Server {
-        Server {
-            bind_hostname,
-            bind_port,
-        }
+        Server { bind_hostname, bind_port }
     }
 
     pub fn listen(&mut self) {
         println!("Initializing TCP server...");
-        let listener =
-            TcpListener::bind(self.bind_hostname.clone() + ":" + &self.bind_port).unwrap();
+        let listener = TcpListener::bind(self.bind_hostname.clone() + ":" + &self.bind_port).unwrap();
         for stream in listener.incoming() {
             let stream = stream.unwrap();
             thread::spawn(|| {

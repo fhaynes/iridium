@@ -63,9 +63,7 @@ impl REPL {
             let stdin = io::stdin();
 
             // Here we'll look at the string the user gave us.
-            stdin
-                .read_line(&mut buffer)
-                .expect("Unable to read line from user");
+            stdin.read_line(&mut buffer).expect("Unable to read line from user");
 
             let historical_copy = buffer.clone();
             self.command_buffer.push(historical_copy);
@@ -76,16 +74,11 @@ impl REPL {
                 let program = match program(CompleteStr(&buffer)) {
                     Ok((_remainder, program)) => program,
                     Err(e) => {
-                        self.send_message(format!(
-                            "There was an error executing the program: {:?}",
-                            e
-                        ));
+                        self.send_message(format!("There was an error executing the program: {:?}", e));
                         continue;
                     }
                 };
-                self.vm
-                    .program
-                    .append(&mut program.to_bytes(&self.asm.symbols));
+                self.vm.program.append(&mut program.to_bytes(&self.asm.symbols));
                 self.vm.run_once();
             }
         }
@@ -141,9 +134,7 @@ impl REPL {
         self.send_message("Please enter the path to the file you wish to load: ".to_string());
         let mut tmp = String::new();
 
-        stdin
-            .read_line(&mut tmp)
-            .expect("Unable to read line from user");
+        stdin.read_line(&mut tmp).expect("Unable to read line from user");
         self.send_message("Attempting to load program from file...".to_string());
 
         let tmp = tmp.trim();
@@ -317,21 +308,13 @@ impl REPL {
         let addr = ip.to_owned() + ":" + port.clone();
         if let Ok(stream) = TcpStream::connect(addr) {
             self.send_message("Connected to cluster!".to_string());
-            let mut cc = cluster::client::ClusterClient::new(
-                stream,
-                self.vm.connection_manager.clone(),
-                self.vm.server_port.clone().unwrap(),
-            )
-            .with_alias(self.vm.alias.clone().unwrap());
+            let mut cc = cluster::client::ClusterClient::new(stream, self.vm.connection_manager.clone(), self.vm.server_port.clone().unwrap())
+                .with_alias(self.vm.alias.clone().unwrap());
             debug!("CC Hello is: {:#?}", cc);
             cc.send_hello();
             if let Some(ref a) = self.vm.alias {
                 if let Ok(mut lock) = self.vm.connection_manager.write() {
-                    let client_tuple = (
-                        a.to_string(),
-                        cc.ip_as_string().unwrap(),
-                        cc.port_as_string().unwrap(),
-                    );
+                    let client_tuple = (a.to_string(), cc.ip_as_string().unwrap(), cc.port_as_string().unwrap());
                     lock.add_client(client_tuple, cc);
                 }
             }
@@ -342,12 +325,7 @@ impl REPL {
 
     fn cluster_members(&mut self, _args: &[&str]) {
         self.send_message("Listing Known Nodes:".to_string());
-        let cluster_members = self
-            .vm
-            .connection_manager
-            .read()
-            .unwrap()
-            .get_client_names();
+        let cluster_members = self.vm.connection_manager.read().unwrap().get_client_names();
         self.send_message(format!("{:#?}", cluster_members));
     }
 }

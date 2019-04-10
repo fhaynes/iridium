@@ -9,10 +9,7 @@ pub struct Scheduler {
 
 impl Scheduler {
     pub fn new() -> Scheduler {
-        Scheduler {
-            next_pid: 0,
-            max_pid: 50000,
-        }
+        Scheduler { next_pid: 0, max_pid: 50000 }
     }
 
     /// Takes a VM and runs it in a background thread

@@ -17,8 +17,7 @@ pub fn listen(my_alias: String, addr: SocketAddr, connection_manager: Arc<RwLock
         thread::spawn(move || {
             debug!("Handling an incoming connection on a thread");
             let mut client = ClusterClient::new(stream, cmgr.clone(), addr.port().to_string());
-            let result: bincode::Result<IridiumMessage> =
-                bincode::deserialize_from(&mut client.reader);
+            let result: bincode::Result<IridiumMessage> = bincode::deserialize_from(&mut client.reader);
             match result {
                 Ok(message) => {
                     match message {
@@ -32,29 +31,20 @@ pub fn listen(my_alias: String, addr: SocketAddr, connection_manager: Arc<RwLock
                             debug!("Grabbed read lock on manager");
                             for (key, value) in &cmgr_lock.clients {
                                 debug!("Processing kv: {:#?} {:#?}", key, value);
-                                let tuple =
-                                    (key.0.to_string(), key.1.to_string(), key.2.to_string());
+                                let tuple = (key.0.to_string(), key.1.to_string(), key.2.to_string());
                                 members.push(tuple);
                             }
                             debug!("Generating hello_ack");
                             let hello_ack = IridiumMessage::HelloAck {
                                 nodes: members,
-                                alias: (
-                                    tmp_alias.clone(),
-                                    addr.ip().to_string(),
-                                    addr.port().to_string(),
-                                ),
+                                alias: (tmp_alias.clone(), addr.ip().to_string(), addr.port().to_string()),
                             };
 
                             client.write_bytes(&bincode::serialize(&hello_ack).unwrap());
                             debug!("Adding {} to clients. Client info: {:?}", alias, client);
                             {
                                 let mut cmgr_lock = cmgr.write().unwrap();
-                                let client_tuple = (
-                                    alias.to_string(),
-                                    client.remote_ip_as_string().unwrap(),
-                                    port.to_string(),
-                                );
+                                let client_tuple = (alias.to_string(), client.remote_ip_as_string().unwrap(), port.to_string());
                                 cmgr_lock.add_client(client_tuple, client);
                             }
                             debug!("Client added to manager");
@@ -65,11 +55,7 @@ pub fn listen(my_alias: String, addr: SocketAddr, connection_manager: Arc<RwLock
                             debug!("Received join message from alias: {:?}", alias);
                             if let Ok(mut connection_manager) = cmgr.write() {
                                 debug!("Added new client {} to conneciton manager", alias);
-                                let client_tuple = (
-                                    alias.to_string(),
-                                    client.remote_ip_as_string().unwrap(),
-                                    port,
-                                );
+                                let client_tuple = (alias.to_string(), client.remote_ip_as_string().unwrap(), port);
                                 connection_manager.add_client(client_tuple, client);
                             } else {
                                 error!("Unable to add {} to connection manager", alias);

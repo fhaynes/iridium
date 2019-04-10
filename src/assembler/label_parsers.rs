@@ -39,12 +39,7 @@ mod tests {
         let result = label_declaration(CompleteStr("test:"));
         assert_eq!(result.is_ok(), true);
         let (_, token) = result.unwrap();
-        assert_eq!(
-            token,
-            Token::LabelDeclaration {
-                name: "test".to_string()
-            }
-        );
+        assert_eq!(token, Token::LabelDeclaration { name: "test".to_string() });
         let result = label_declaration(CompleteStr("test"));
         assert_eq!(result.is_ok(), false);
     }
@@ -54,12 +49,7 @@ mod tests {
         let result = label_usage(CompleteStr("@test"));
         assert_eq!(result.is_ok(), true);
         let (_, token) = result.unwrap();
-        assert_eq!(
-            token,
-            Token::LabelUsage {
-                name: "test".to_string()
-            }
-        );
+        assert_eq!(token, Token::LabelUsage { name: "test".to_string() });
         let result = label_usage(CompleteStr("test"));
         assert_eq!(result.is_ok(), false);
     }

@@ -84,10 +84,7 @@ impl Assembler {
                 self.process_first_phase(&mut program);
                 if !self.errors.is_empty() {
                     // TODO: Can we avoid a clone here?
-                    error!(
-                        "Errors were found in the first parsing phase: {:?}",
-                        self.errors
-                    );
+                    error!("Errors were found in the first parsing phase: {:?}", self.errors);
                     return Err(self.errors.clone());
                 };
                 debug!("First parsing phase complete");
@@ -115,9 +112,7 @@ impl Assembler {
             // If there were parsing errors, bad syntax, etc, this arm is run
             Err(e) => {
                 error!("There was an error parsing the code: {:?}", e);
-                Err(vec![AssemblerError::ParseError {
-                    error: e.to_string(),
-                }])
+                Err(vec![AssemblerError::ParseError { error: e.to_string() }])
             }
         }
     }
@@ -132,17 +127,13 @@ impl Assembler {
                 let _register = i.get_register_number();
                 let mut wtr = vec![];
                 let _ = wtr.write_i16::<LittleEndian>(value.unwrap());
-                i.operand2 = Some(Token::IntegerOperand {
-                    value: wtr[1].into(),
-                });
+                i.operand2 = Some(Token::IntegerOperand { value: wtr[1].into() });
                 let new_instruction = AssemblerInstruction {
                     opcode: Some(Token::Op { code: Opcode::LUI }),
                     label: None,
                     directive: None,
                     operand1: i.operand1.clone(),
-                    operand2: Some(Token::IntegerOperand {
-                        value: wtr[0].into(),
-                    }),
+                    operand2: Some(Token::IntegerOperand { value: wtr[0].into() }),
                     operand3: None,
                 };
                 inserts_to_do.push((idx + 1, new_instruction));
@@ -167,10 +158,7 @@ impl Assembler {
                     self.process_label_declaration(&i);
                 } else {
                     // If we have *not* hit a segment header yet, then we have a label outside of a segment, which is not allowed
-                    error!(
-                        "Label found outside of a section in first phase: {:?}",
-                        i.get_label_name()
-                    );
+                    error!("Label found outside of a section in first phase: {:?}", i.get_label_name());
                     self.errors.push(AssemblerError::NoSegmentDeclarationFound {
                         instruction: self.current_instruction,
                     });
@@ -196,10 +184,7 @@ impl Assembler {
         // Same as in first pass, except in the second pass we care about opcodes and directives
         for i in &p.instructions {
             if i.is_directive() {
-                debug!(
-                    "Found a directive in second phase {:?}, bypassing",
-                    i.directive
-                );
+                debug!("Found a directive in second phase {:?}, bypassing", i.directive);
                 continue;
             }
             if i.is_opcode() {
@@ -216,18 +201,14 @@ impl Assembler {
         let name = match i.get_label_name() {
             Some(name) => name,
             None => {
-                self.errors
-                    .push(AssemblerError::StringConstantDeclaredWithoutLabel {
-                        instruction: self.current_instruction,
-                    });
+                self.errors.push(AssemblerError::StringConstantDeclaredWithoutLabel {
+                    instruction: self.current_instruction,
+                });
                 return;
             }
         };
 
-        debug!(
-            "Found label declaration: {} on line {}",
-            name, self.current_instruction
-        );
+        debug!("Found label declaration: {} on line {}", name, self.current_instruction);
         // Check if label is already in use (has an entry in the symbol table)
         // TODO: Is there a cleaner way to do this?
         if self.symbols.has_symbol(&name) {
@@ -236,13 +217,8 @@ impl Assembler {
         }
 
         // If we make it here, it isn't a symbol we've seen before, so stick it in the table
-        let symbol =
-            Symbol::new_with_offset(name, SymbolType::Label, (self.current_instruction * 4) + 60);
-        debug!(
-            "Added new symbol to table: {:?} with offset {:?}",
-            symbol,
-            (self.current_instruction * 4) + 60
-        );
+        let symbol = Symbol::new_with_offset(name, SymbolType::Label, (self.current_instruction * 4) + 60);
+        debug!("Added new symbol to table: {:?} with offset {:?}", symbol, (self.current_instruction * 4) + 60);
         self.symbols.add_symbol(symbol);
     }
 
@@ -357,29 +333,20 @@ impl Assembler {
         let mut new_section: AssemblerSection = header_name.into();
         // Only specific section names are allowed
         if new_section == AssemblerSection::Unknown {
-            println!(
-                "Found an section header that is unknown: {:#?}",
-                header_name
-            );
+            println!("Found an section header that is unknown: {:#?}", header_name);
             return;
         }
 
         match new_section {
-            AssemblerSection::Code {
-                ref mut starting_instruction,
-            } => {
+            AssemblerSection::Code { ref mut starting_instruction } => {
                 debug!("Code section starts at: {}", self.current_instruction);
                 *starting_instruction = Some(self.current_instruction)
             }
-            AssemblerSection::Data {
-                ref mut starting_instruction,
-            } => {
+            AssemblerSection::Data { ref mut starting_instruction } => {
                 debug!("Data section starts at: {}", self.current_instruction);
                 *starting_instruction = Some(self.current_instruction)
             }
-            AssemblerSection::Unknown => {
-                error!("Found a section header that is unknown: {:?}", new_section)
-            }
+            AssemblerSection::Unknown => error!("Found a section header that is unknown: {:?}", new_section),
         };
 
         // TODO: Check if we really need to keep a list of all sections seen
@@ -436,12 +403,8 @@ impl Default for AssemblerSection {
 impl<'a> From<&'a str> for AssemblerSection {
     fn from(name: &str) -> AssemblerSection {
         match name {
-            "data" => AssemblerSection::Data {
-                starting_instruction: None,
-            },
-            "code" => AssemblerSection::Code {
-                starting_instruction: None,
-            },
+            "data" => AssemblerSection::Data { starting_instruction: None },
+            "code" => AssemblerSection::Code { starting_instruction: None },
             _ => AssemblerSection::Unknown,
         }
     }

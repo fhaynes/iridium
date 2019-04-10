@@ -1,5 +1,5 @@
 use cluster::client::ClusterClient;
-use cluster::{NodeInfo};
+use cluster::NodeInfo;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use std::thread;
@@ -11,9 +11,7 @@ pub struct Manager {
 
 impl Manager {
     pub fn new() -> Manager {
-        Manager {
-            clients: HashMap::new(),
-        }
+        Manager { clients: HashMap::new() }
     }
 
     pub fn add_client(&mut self, alias: NodeInfo, client: ClusterClient) -> bool {

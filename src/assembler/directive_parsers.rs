@@ -62,12 +62,7 @@ mod tests {
         let result = directive_declaration(CompleteStr(".data"));
         assert_eq!(result.is_ok(), true);
         let (_, directive) = result.unwrap();
-        assert_eq!(
-            directive,
-            Token::Directive {
-                name: "data".to_string()
-            }
-        )
+        assert_eq!(directive, Token::Directive { name: "data".to_string() })
     }
 
     #[test]
@@ -79,15 +74,9 @@ mod tests {
         // Yes, this is the what the result should be
         let correct_instruction = AssemblerInstruction {
             opcode: None,
-            label: Some(Token::LabelDeclaration {
-                name: "test".to_string(),
-            }),
-            directive: Some(Token::Directive {
-                name: "asciiz".to_string(),
-            }),
-            operand1: Some(Token::IrString {
-                name: "Hello".to_string(),
-            }),
+            label: Some(Token::LabelDeclaration { name: "test".to_string() }),
+            directive: Some(Token::Directive { name: "asciiz".to_string() }),
+            operand1: Some(Token::IrString { name: "Hello".to_string() }),
             operand2: None,
             operand3: None,
         };

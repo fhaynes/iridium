@@ -24,11 +24,7 @@ pub struct ClusterClient {
 
 impl ClusterClient {
     /// Creates and returns a new ClusterClient that wraps TcpStreams for communicating with it
-    pub fn new(
-        stream: TcpStream,
-        manager: Arc<RwLock<Manager>>,
-        bind_port: String,
-    ) -> ClusterClient {
+    pub fn new(stream: TcpStream, manager: Arc<RwLock<Manager>>, bind_port: String) -> ClusterClient {
         // TODO: Handle this better
         let reader = stream.try_clone().unwrap();
         let writer = stream.try_clone().unwrap();
@@ -54,9 +50,7 @@ impl ClusterClient {
     pub fn send_hello(&mut self) {
         match self.alias {
             Some(ref alias) => {
-                if let Ok(mut hello) =
-                    IridiumMessage::hello(alias, &self.bind_port.clone().unwrap())
-                {
+                if let Ok(mut hello) = IridiumMessage::hello(alias, &self.bind_port.clone().unwrap()) {
                     if self.raw_stream.write_all(&hello).is_ok() {
                         trace!("Hello sent: {:#?}", hello);
                     } else {
@@ -166,8 +160,7 @@ impl ClusterClient {
     pub fn run(&mut self) {
         self.recv_loop();
         loop {
-            let result: bincode::Result<IridiumMessage> =
-                bincode::deserialize_from(&mut self.reader);
+            let result: bincode::Result<IridiumMessage> = bincode::deserialize_from(&mut self.reader);
             if let Err(e) = result {
                 match *e {
                     bincode::ErrorKind::Io(inner_error) => {
@@ -175,10 +168,7 @@ impl ClusterClient {
                         return;
                     }
                     _ => {
-                        error!(
-                            "There was an unknown error communicating with the client: {:?}",
-                            e
-                        );
+                        error!("There was an unknown error communicating with the client: {:?}", e);
                         return;
                     }
                 }
@@ -186,17 +176,10 @@ impl ClusterClient {
             match result {
                 Ok(ref message) => {
                     match message {
-                        &IridiumMessage::HelloAck {
-                            ref nodes,
-                            alias: _,
-                        } => {
-                            let join_message: std::result::Result<
-                                std::vec::Vec<u8>,
-                                std::boxed::Box<bincode::ErrorKind>,
-                            >;
+                        &IridiumMessage::HelloAck { ref nodes, alias: _ } => {
+                            let join_message: std::result::Result<std::vec::Vec<u8>, std::boxed::Box<bincode::ErrorKind>>;
                             if let Some(ref alias) = self.alias_as_string() {
-                                join_message =
-                                    IridiumMessage::join(&alias, &self.port_as_string().unwrap());
+                                join_message = IridiumMessage::join(&alias, &self.port_as_string().unwrap());
                             } else {
                                 error!("Unable to get my own alias to send a join message to other cluster members");
                                 continue;
@@ -209,11 +192,7 @@ impl ClusterClient {
                                 let remote_port = &node.2;
                                 let addr = remote_ip.to_owned() + ":" + remote_port;
                                 if let Ok(stream) = TcpStream::connect(addr) {
-                                    let mut cluster_client = ClusterClient::new(
-                                        stream,
-                                        self.connection_manager.clone(),
-                                        self.bind_port.clone().unwrap(),
-                                    );
+                                    let mut cluster_client = ClusterClient::new(stream, self.connection_manager.clone(), self.bind_port.clone().unwrap());
                                     cluster_client.write_bytes(&join_message);
                                     if let Ok(mut cm) = self.connection_manager.write() {
                                         let client_tuple = (
